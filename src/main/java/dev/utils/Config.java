@@ -1,0 +1,68 @@
+package dev.utils;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+
+public class Config {
+    private static final Logger logger = Logger.getLogger(Config.class);
+    private final Properties properties;
+
+    public Config(Properties properties) {
+        this.properties = properties;
+    }
+
+    public static Config load(String filename) {
+        Properties properties = new Properties();
+
+        try (InputStream in = Thread.currentThread().getContextClassLoader().getResourceAsStream(filename)) {
+
+            if (in == null) {
+                logger.error("No config file was provided. Usage: java Main <config-file>");
+                throw new CustomException("Resource not found on classpath: " + filename, null);
+            }
+
+            properties.load(in);
+
+        } catch (IOException e) {
+            logger.error("Could not load config file: {}", filename, e);
+            throw new CustomException("Could not load file: " + filename, e);
+        }
+
+        return new Config(properties);
+    }
+
+    public String getNodeHost() {
+        return properties.getProperty("node.host", "localhost");
+    }
+
+    public int getNodePort() {
+        return Integer.parseInt(properties.getProperty("node.port", "12137"));
+    }
+
+    public boolean isBootstrapNode() {
+        return Boolean.parseBoolean(properties.getProperty("node.bootstrap", "true"));
+    }
+
+    public int getMaxConnections() {
+        return getOutboundConnectionLimit() + getInboundConnectionLimit();
+    }
+
+    public int getInboundConnectionLimit() {
+        return Integer.parseInt(properties.getProperty("node.connections.inbound.max", "3"));
+    }
+
+    public int getOutboundConnectionLimit() {
+        return Integer.parseInt(properties.getProperty("node.connections.outbound.max", "3"));
+    }
+
+    public String getBootstrapNodeHost() {
+        return properties.getProperty("bootstrap.host", "localhost");
+    }
+
+    public int getBootstrapNodePort() {
+        return Integer.parseInt(properties.getProperty("bootstrap.port", "12137"));
+    }
+
+    // TODO: method for verifying config values (integers specifically)
+}
