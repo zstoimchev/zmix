@@ -44,4 +44,15 @@ public class MessageBuilder {
                 new PeerRequestPayload(peerList)
         );
     }
+
+    public Message buildCircuitCreateMessage(String circuitId, String nextHopPublicKey) {
+        return new Message(
+                MessageType.CIRCUIT_CREATE,
+                senderPublicKey,
+                System.currentTimeMillis(),
+                UUID.randomUUID().toString(),
+                circuitId,
+                nextHopPublicKey
+        );
+    }
 }
