@@ -2,10 +2,12 @@ package dev.onion;
 
 import dev.message.Message;
 import dev.message.MessageBuilder;
+import dev.message.MessageType;
 import dev.network.NetworkManager;
 import dev.network.Peer;
 import dev.utils.Crypto;
 import dev.utils.Logger;
+import dev.utils.MessageSerializer;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -77,28 +79,28 @@ public class CircuitManager {
     }
 
     private void buildCircuitCreate(String circuitId, Peer firstHop, Peer secondHop) {
-        Message message = messageBuilder.buildCircuitCreateMessage(circuitId, secondHop.getPeerId().toString());
+        Message message = messageBuilder.buildCircuitCreateMessageRequest(circuitId, secondHop.getPeerId().toString());
         firstHop.send(message);
     }
 
     private void extendCircuitTo(String circuitId, List<Peer> path, int hopIndex) {
-        // Build message for the target hop
-        Peer targetPeer = path.get(hopIndex);
-        Peer nextPeer = (hopIndex < path.size() - 1) ? path.get(hopIndex + 1) : null;
-
-        Message innerMsg = messageBuilder.buildCircuitExtendMessage(circuitId, nextPeer != null ? nextPeer.getPeerId() : null, nextPeer == null // is exit node
-        );
-
-        // Encrypt in layers (backwards from target to first hop)
-        byte[] data = MessageSerializer.serialize(innerMsg).getBytes();
-
-        for (int i = hopIndex; i >= 0; i--) {
-            data = crypto.encrypt(data, path.get(i).getPublicKey());
-        }
-
-        // Send through first hop
-        Message relayMsg = new Message(MessageType.RELAY_EXTEND, circuitId, data);
-        path.get(0).send(relayMsg);
+//        // Build message for the target hop
+//        Peer targetPeer = path.get(hopIndex);
+//        Peer nextPeer = (hopIndex < path.size() - 1) ? path.get(hopIndex + 1) : null;
+//
+//        Message innerMsg = messageBuilder.buildCircuitExtendMessage(circuitId, nextPeer != null ? nextPeer.getPeerId() : null, nextPeer == null // is exit node
+//        );
+//
+//        // Encrypt in layers (backwards from target to first hop)
+//        byte[] data = MessageSerializer.serialize(innerMsg).getBytes();
+//
+//        for (int i = hopIndex; i >= 0; i--) {
+//            data = crypto.encrypt(data, path.get(i).getPublicKey());
+//        }
+//
+//        // Send through first hop
+//        Message relayMsg = new Message(MessageType.RELAY_EXTEND, circuitId, data);
+//        path.get(0).send(relayMsg);
     }
 
 

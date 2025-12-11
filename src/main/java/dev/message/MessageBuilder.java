@@ -45,14 +45,25 @@ public class MessageBuilder {
         );
     }
 
-    public Message buildCircuitCreateMessage(String circuitId, String nextHopPublicKey) {
+    public Message buildCircuitCreateMessageRequest(String circuitId, String nextHopPublicKey) {
         return new Message(
-                MessageType.CIRCUIT_CREATE,
+                MessageType.CIRCUIT_CREATE_REQUEST,
                 senderPublicKey,
                 System.currentTimeMillis(),
                 UUID.randomUUID().toString(),
-                circuitId,
-                nextHopPublicKey
+                null,
+                null
+        );
+    }
+
+    public Message buildCircuitCreateMessageResponse(String circuitId, String nextHopPublicKey) {
+        return new Message(
+                MessageType.CREATE_CIRCUIT_RESPONSE,
+                senderPublicKey,
+                System.currentTimeMillis(),
+                UUID.randomUUID().toString(),
+                null,
+                null
         );
     }
 }

@@ -59,4 +59,8 @@ public class Crypto {
 
     public PublicKey getPublicKey() { return pub; }
     public PrivateKey getPrivateKey() { return pvt; }
+
+    public byte[] encrypt(byte[] data, PublicKey publicKey) {
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
 }

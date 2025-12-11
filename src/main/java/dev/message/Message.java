@@ -20,6 +20,10 @@ public class Message {
 
     private MessagePayload payload;
 
+    public Message(MessageType messageType, String circuitId, byte[] data) {
+
+    }
+
     @Override
     public String toString() {
         return "Message{type=" + type + ", id=" + messageId + ", senderPublicKey=" + senderPublicKey + ", payload=" + payload + "}";
