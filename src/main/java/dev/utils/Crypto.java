@@ -33,7 +33,7 @@ public class Crypto {
             byte[] signature = ecdsaSign.sign();
 
             message.setSignature(Base64.getEncoder().encodeToString(signature));
-            message.setSenderPublicKey(Base64.getEncoder().encodeToString(pub.getEncoded()));
+//            message.setSenderPublicKey(Base64.getEncoder().encodeToString(pub.getEncoded()));
             return message;
         } catch (Exception e) {
             throw new RuntimeException("Failed to sign message", e);
@@ -42,13 +42,13 @@ public class Crypto {
 
     public static boolean verifyMessage(Message message) {
         try {
-            byte[] pubBytes = Base64.getDecoder().decode(message.getSenderPublicKey());
-            EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(pubBytes);
-            KeyFactory keyFactory = KeyFactory.getInstance("EC");
-            PublicKey publicKey = keyFactory.generatePublic(publicKeySpec);
+//            byte[] pubBytes = Base64.getDecoder().decode(message.getSenderPublicKey());
+//            EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(pubBytes);
+//            KeyFactory keyFactory = KeyFactory.getInstance("EC");
+//            PublicKey publicKey = keyFactory.generatePublic(publicKeySpec);
 
             Signature ecdsaVerify = Signature.getInstance("SHA256withECDSA");
-            ecdsaVerify.initVerify(publicKey);
+//            ecdsaVerify.initVerify(publicKey);
             ecdsaVerify.update(message.getPayload().toString().getBytes(StandardCharsets.UTF_8));
 
             return ecdsaVerify.verify(Base64.getDecoder().decode(message.getSignature()));
@@ -59,8 +59,4 @@ public class Crypto {
 
     public PublicKey getPublicKey() { return pub; }
     public PrivateKey getPrivateKey() { return pvt; }
-
-    public byte[] encrypt(byte[] data, PublicKey publicKey) {
-        throw new UnsupportedOperationException("Not implemented yet");
-    }
 }

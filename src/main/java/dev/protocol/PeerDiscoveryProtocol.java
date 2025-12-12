@@ -27,26 +27,32 @@ public class PeerDiscoveryProtocol implements Protocol {
     @Override
     public void digest(Peer peer, Message message) {
         switch (message.getType()) {
-            case PEER_REQUEST:
-                handlePeerRequest(peer, message);
+            case PEER_DISCOVERY_REQUEST:
+                handlePeerDiscoveryRequest(peer, message);
                 break;
-            case PEER_RESPONSE:
-                handlePeerResponse(peer, message);
+            case PEER_DISCOVERY_RESPONSE:
+                handlePeerDiscoveryResponse(peer, message);
+                break;
+            case CIRCUIT_CREATE_REQUEST:
+                // call handleCircuitCreateRequest(peer, message);
+                break;
+            case CREATE_CIRCUIT_RESPONSE:
+                // call handleCircuitCreateResponse(peer, message);
                 break;
             default:
                 logger.warn("PeerDiscoveryProtocol received unexpected message type: {}", message.getType());
         }
     }
 
-    private void handlePeerRequest(Peer peer, Message message) {
+    private void handlePeerDiscoveryRequest(Peer peer, Message message) {
         logger.info("Received peer request from: {}", peer.getPeerId());
 
         List<PeerInfo> peerList = networkManager.getConnectedPeers().values().stream()
                 .filter(p -> !p.getPeerId().equals(peer.getPeerId()))
                 .map(p -> new PeerInfo(
-                        Base64.getEncoder().encodeToString(p.getPublicKey().getEncoded()),
-                        p.getSocket().getLocalAddress().getHostAddress(),   // TODO ? ? ? correct ?
-                        p.getSocket().getLocalPort()                        // TODO ? ? ? correct ?
+                        p.getPublicKeyBase64Encoded(),
+                        p.getIp(),
+                        p.getPort()
                 ))
                 .limit(20)
                 .collect(Collectors.toList());
@@ -56,7 +62,7 @@ public class PeerDiscoveryProtocol implements Protocol {
         logger.info("Sent {} peers to: {}", peerList.size(), peer.getPeerId());
     }
 
-    private void handlePeerResponse(Peer peer, Message message) {
+    private void handlePeerDiscoveryResponse(Peer peer, Message message) {
         logger.info("Received peer response from: {}", peer.getPeerId());
 
         PeerRequestPayload payload = (PeerRequestPayload) message.getPayload();

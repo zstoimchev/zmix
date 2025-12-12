@@ -12,7 +12,6 @@ import lombok.Setter;
 @NoArgsConstructor
 public class Message {
     private MessageType type;
-    private String senderPublicKey;
     private long timestamp;
 
     private String messageId;
@@ -20,13 +19,9 @@ public class Message {
 
     private MessagePayload payload;
 
-    public Message(MessageType messageType, String circuitId, byte[] data) {
-
-    }
-
     @Override
     public String toString() {
-        return "Message{type=" + type + ", id=" + messageId + ", senderPublicKey=" + senderPublicKey + ", payload=" + payload + "}";
+        return "Message{type=" + type + ", id=" + messageId + ", senderPublicKey=" + ", payload=" + payload + "}";
     }
 }
 

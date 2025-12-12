@@ -1,32 +1,27 @@
 package dev.message;
 
+import dev.message.payload.HandshakePayload;
 import dev.message.payload.PeerRequestPayload;
 import dev.network.PeerInfo;
-import lombok.AllArgsConstructor;
 
 import java.util.List;
 import java.util.UUID;
 
-@AllArgsConstructor
 public class MessageBuilder {
-    private String senderPublicKey;
-    private UUID senderNodeId;
 
-    public Message buildHandshakeMessage() {
+    public Message buildHandshakeMessage(String senderPublicKeyEncoded) {
         return new Message(
                 MessageType.HANDSHAKE,
-                senderPublicKey,
                 System.currentTimeMillis(),
                 UUID.randomUUID().toString(),
                 null,
-                null
+                new HandshakePayload(senderPublicKeyEncoded)
         );
     }
 
     public Message buildPeerRequestMessage() {
         return new Message(
-                MessageType.PEER_REQUEST,
-                senderPublicKey,
+                MessageType.PEER_DISCOVERY_REQUEST,
                 System.currentTimeMillis(),
                 UUID.randomUUID().toString(),
                 null,
@@ -36,8 +31,7 @@ public class MessageBuilder {
 
     public Message buildPeerResponseMessage(List<PeerInfo> peerList) {
         return new Message(
-                MessageType.PEER_RESPONSE,
-                senderPublicKey,
+                MessageType.PEER_DISCOVERY_RESPONSE,
                 System.currentTimeMillis(),
                 UUID.randomUUID().toString(),
                 null,
@@ -48,7 +42,6 @@ public class MessageBuilder {
     public Message buildCircuitCreateMessageRequest(String circuitId, String nextHopPublicKey) {
         return new Message(
                 MessageType.CIRCUIT_CREATE_REQUEST,
-                senderPublicKey,
                 System.currentTimeMillis(),
                 UUID.randomUUID().toString(),
                 null,
@@ -59,7 +52,6 @@ public class MessageBuilder {
     public Message buildCircuitCreateMessageResponse(String circuitId, String nextHopPublicKey) {
         return new Message(
                 MessageType.CREATE_CIRCUIT_RESPONSE,
-                senderPublicKey,
                 System.currentTimeMillis(),
                 UUID.randomUUID().toString(),
                 null,

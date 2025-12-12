@@ -43,7 +43,7 @@ public class NetworkManager {
         this.connectedPeers = new ConcurrentHashMap<>();
         this.pendingPeers = new ConcurrentHashMap<>();
         this.crypto = new Crypto();
-        messageBuilder = new MessageBuilder(getEncodedPublicKey(), nodeId);
+        messageBuilder = new MessageBuilder();
 
         this.messageHandler = messageHandler;
         this.peerDiscoveryProtocol = new PeerDiscoveryProtocol(this);
@@ -88,8 +88,8 @@ public class NetworkManager {
 
     // Register protocols in Message Handler
     private void registerProtocols() {
-        messageHandler.registerProtocol(MessageType.PEER_REQUEST, peerDiscoveryProtocol);
-        messageHandler.registerProtocol(MessageType.PEER_RESPONSE, peerDiscoveryProtocol);
+        messageHandler.registerProtocol(MessageType.PEER_DISCOVERY_REQUEST, peerDiscoveryProtocol);
+        messageHandler.registerProtocol(MessageType.PEER_DISCOVERY_RESPONSE, peerDiscoveryProtocol);
         logger.info("Registered all protocol handlers");
     }
 }
