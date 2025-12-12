@@ -1,6 +1,0 @@
-<component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Compose" type="CompoundRunConfigurationType">
-    <toRun name="Peer" type="Application" />
-    <method v="2" />
-  </configuration>
-</component>
