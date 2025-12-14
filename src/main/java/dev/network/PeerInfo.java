@@ -1,5 +1,8 @@
 package dev.network;
 
+import lombok.NoArgsConstructor;
+
+@NoArgsConstructor
 public class PeerInfo {
     public String publicKey;
     public String host;

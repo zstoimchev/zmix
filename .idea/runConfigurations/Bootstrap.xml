@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Bootstrap" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="dev.Main" />
+    <module name="zmix" />
+    <option name="PROGRAM_PARAMETERS" value="node.bootstrap.properties" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>

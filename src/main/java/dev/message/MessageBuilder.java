@@ -1,7 +1,7 @@
 package dev.message;
 
 import dev.message.payload.HandshakePayload;
-import dev.message.payload.PeerRequestPayload;
+import dev.message.payload.PeerResponsePayload;
 import dev.network.PeerInfo;
 
 import java.util.List;
@@ -35,7 +35,7 @@ public class MessageBuilder {
                 System.currentTimeMillis(),
                 UUID.randomUUID().toString(),
                 null,
-                new PeerRequestPayload(peerList)
+                new PeerResponsePayload(peerList)
         );
     }
 

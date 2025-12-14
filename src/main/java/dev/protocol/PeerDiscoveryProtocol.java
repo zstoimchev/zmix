@@ -1,13 +1,12 @@
 package dev.protocol;
 
 import dev.message.Message;
-import dev.message.payload.PeerRequestPayload;
+import dev.message.payload.PeerResponsePayload;
 import dev.network.NetworkManager;
 import dev.network.Peer;
 import dev.network.PeerInfo;
 import dev.utils.Logger;
 
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -65,7 +64,7 @@ public class PeerDiscoveryProtocol implements Protocol {
     private void handlePeerDiscoveryResponse(Peer peer, Message message) {
         logger.info("Received peer response from: {}", peer.getPeerId());
 
-        PeerRequestPayload payload = (PeerRequestPayload) message.getPayload();
+        PeerResponsePayload payload = (PeerResponsePayload) message.getPayload();
         if (payload == null || payload.getPeerList() == null) {
             logger.warn("Received empty peer response");
             return;
