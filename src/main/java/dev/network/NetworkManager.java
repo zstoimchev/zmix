@@ -2,7 +2,8 @@ package dev.network;
 
 import dev.message.Message;
 import dev.message.MessageBuilder;
-import dev.message.MessageType;
+import dev.message.enums.MessageType;
+import dev.network.peer.Peer;
 import dev.protocol.MessageHandler;
 import dev.protocol.PeerDiscoveryProtocol;
 import dev.utils.Config;
@@ -75,7 +76,7 @@ public class NetworkManager {
     }
 
     public void broadcast(Message message) {
-        logger.debug("Broadcasting message type {} to {} peers", message.getType(), connectedPeers.size());
+        logger.debug("Broadcasting message type {} to {} peers", message.getMessageType(), connectedPeers.size());
 
         for (Peer peer : connectedPeers.values()) {
             try {

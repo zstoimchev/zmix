@@ -1,6 +1,7 @@
-package dev.message;
+package dev.network;
 
-import dev.network.Peer;
+import dev.message.Message;
+import dev.network.peer.Peer;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;

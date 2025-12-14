@@ -1,4 +1,4 @@
-package dev.message;
+package dev.message.enums;
 
 public enum MessageType {
     HANDSHAKE,

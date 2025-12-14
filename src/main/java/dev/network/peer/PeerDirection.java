@@ -1,4 +1,4 @@
-package dev.network;
+package dev.network.peer;
 
 public enum PeerDirection {
     INBOUND,

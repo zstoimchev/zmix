@@ -2,12 +2,10 @@ package dev.onion;
 
 import dev.message.Message;
 import dev.message.MessageBuilder;
-import dev.message.MessageType;
 import dev.network.NetworkManager;
-import dev.network.Peer;
+import dev.network.peer.Peer;
 import dev.utils.Crypto;
 import dev.utils.Logger;
-import dev.utils.MessageSerializer;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;

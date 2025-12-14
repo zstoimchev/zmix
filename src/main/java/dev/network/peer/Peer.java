@@ -1,11 +1,12 @@
-package dev.network;
+package dev.network.peer;
 
-import dev.message.Event;
 import dev.message.Message;
-import dev.message.MessageQueue;
-import dev.message.MessageType;
+import dev.message.enums.MessageType;
 import dev.message.payload.HandshakePayload;
-import dev.utils.MessageSerializer;
+import dev.network.Event;
+import dev.network.MessageQueue;
+import dev.network.NetworkManager;
+import dev.message.MessageSerializer;
 import dev.utils.CustomException;
 import dev.utils.Logger;
 import lombok.Getter;
@@ -133,8 +134,8 @@ public class Peer implements Runnable {
 
         Message message = MessageSerializer.deserialize(rawMessage);
 
-        if (message.getType() != MessageType.HANDSHAKE) {
-            logger.warn("Expected {}, got: {}", MessageType.HANDSHAKE, message.getType());
+        if (message.getMessageType() != MessageType.HANDSHAKE) {
+            logger.warn("Expected {}, got: {}", MessageType.HANDSHAKE, message.getMessageType());
             return false;
         }
 

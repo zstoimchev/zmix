@@ -3,8 +3,8 @@ package dev.protocol;
 import dev.message.Message;
 import dev.message.payload.PeerResponsePayload;
 import dev.network.NetworkManager;
-import dev.network.Peer;
-import dev.network.PeerInfo;
+import dev.network.peer.Peer;
+import dev.network.peer.PeerInfo;
 import dev.utils.Logger;
 
 import java.util.HashMap;
@@ -25,7 +25,7 @@ public class PeerDiscoveryProtocol implements Protocol {
 
     @Override
     public void digest(Peer peer, Message message) {
-        switch (message.getType()) {
+        switch (message.getMessageType()) {
             case PEER_DISCOVERY_REQUEST:
                 handlePeerDiscoveryRequest(peer, message);
                 break;
@@ -39,7 +39,7 @@ public class PeerDiscoveryProtocol implements Protocol {
                 // call handleCircuitCreateResponse(peer, message);
                 break;
             default:
-                logger.warn("PeerDiscoveryProtocol received unexpected message type: {}", message.getType());
+                logger.warn("PeerDiscoveryProtocol received unexpected message type: {}", message.getMessageType());
         }
     }
 

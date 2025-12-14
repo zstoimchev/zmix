@@ -1,6 +1,6 @@
 package dev;
 
-import dev.message.MessageQueue;
+import dev.network.MessageQueue;
 import dev.network.NetworkManager;
 import dev.network.Server;
 import dev.protocol.MessageHandler;

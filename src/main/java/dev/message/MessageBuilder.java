@@ -1,8 +1,10 @@
 package dev.message;
 
+import dev.message.enums.MessageType;
+import dev.message.enums.PayloadType;
 import dev.message.payload.HandshakePayload;
 import dev.message.payload.PeerResponsePayload;
-import dev.network.PeerInfo;
+import dev.network.peer.PeerInfo;
 
 import java.util.List;
 import java.util.UUID;
@@ -12,6 +14,7 @@ public class MessageBuilder {
     public Message buildHandshakeMessage(String senderPublicKeyEncoded) {
         return new Message(
                 MessageType.HANDSHAKE,
+                PayloadType.HANDSHAKE,
                 System.currentTimeMillis(),
                 UUID.randomUUID().toString(),
                 null,
@@ -22,6 +25,7 @@ public class MessageBuilder {
     public Message buildPeerRequestMessage() {
         return new Message(
                 MessageType.PEER_DISCOVERY_REQUEST,
+                PayloadType.PEER_REQUEST,
                 System.currentTimeMillis(),
                 UUID.randomUUID().toString(),
                 null,
@@ -32,6 +36,7 @@ public class MessageBuilder {
     public Message buildPeerResponseMessage(List<PeerInfo> peerList) {
         return new Message(
                 MessageType.PEER_DISCOVERY_RESPONSE,
+                PayloadType.PEER_RESPONSE,
                 System.currentTimeMillis(),
                 UUID.randomUUID().toString(),
                 null,
@@ -42,6 +47,7 @@ public class MessageBuilder {
     public Message buildCircuitCreateMessageRequest(String circuitId, String nextHopPublicKey) {
         return new Message(
                 MessageType.CIRCUIT_CREATE_REQUEST,
+                null,
                 System.currentTimeMillis(),
                 UUID.randomUUID().toString(),
                 null,
@@ -52,6 +58,7 @@ public class MessageBuilder {
     public Message buildCircuitCreateMessageResponse(String circuitId, String nextHopPublicKey) {
         return new Message(
                 MessageType.CREATE_CIRCUIT_RESPONSE,
+                null,
                 System.currentTimeMillis(),
                 UUID.randomUUID().toString(),
                 null,

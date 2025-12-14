@@ -1,6 +1,6 @@
 package dev.onion;
 
-import dev.network.Peer;
+import dev.network.peer.Peer;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;

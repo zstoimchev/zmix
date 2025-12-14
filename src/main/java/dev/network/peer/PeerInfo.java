@@ -1,7 +1,9 @@
-package dev.network;
+package dev.network.peer;
 
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+@Getter
 @NoArgsConstructor
 public class PeerInfo {
     public String publicKey;

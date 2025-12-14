@@ -1,6 +1,7 @@
 package dev.network;
 
-import dev.message.MessageQueue;
+import dev.network.peer.Peer;
+import dev.network.peer.PeerDirection;
 import dev.utils.Config;
 import dev.utils.CustomException;
 import dev.utils.Logger;
