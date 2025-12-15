@@ -1,6 +1,7 @@
 package dev.network.peer;
 
 import dev.message.Message;
+import dev.message.MessageBuilder;
 import dev.message.enums.MessageType;
 import dev.message.payload.HandshakePayload;
 import dev.network.Event;
@@ -118,7 +119,7 @@ public class Peer implements Runnable {
     }
 
     private void sendHandshake() {
-        Message handshakeMessage = networkManager.getMessageBuilder().buildHandshakeMessage(networkManager.getEncodedPublicKey());
+        Message handshakeMessage = MessageBuilder.buildHandshakeMessage(networkManager.getEncodedPublicKey());
         this.send(handshakeMessage);
         logger.info("Sent handshake to {}", socket.getRemoteSocketAddress());
     }

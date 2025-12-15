@@ -11,7 +11,7 @@ import java.util.UUID;
 
 public class MessageBuilder {
 
-    public Message buildHandshakeMessage(String senderPublicKeyEncoded) {
+    public static Message buildHandshakeMessage(String senderPublicKeyEncoded) {
         return new Message(
                 MessageType.HANDSHAKE,
                 PayloadType.HANDSHAKE,
@@ -22,7 +22,7 @@ public class MessageBuilder {
         );
     }
 
-    public Message buildPeerRequestMessage() {
+    public static Message buildPeerRequestMessage() {
         return new Message(
                 MessageType.PEER_DISCOVERY_REQUEST,
                 PayloadType.PEER_REQUEST,
@@ -33,7 +33,7 @@ public class MessageBuilder {
         );
     }
 
-    public Message buildPeerResponseMessage(List<PeerInfo> peerList) {
+    public static Message buildPeerResponseMessage(List<PeerInfo> peerList) {
         return new Message(
                 MessageType.PEER_DISCOVERY_RESPONSE,
                 PayloadType.PEER_RESPONSE,
@@ -44,7 +44,7 @@ public class MessageBuilder {
         );
     }
 
-    public Message buildCircuitCreateMessageRequest(String circuitId, String nextHopPublicKey) {
+    public static Message buildCircuitCreateMessageRequest(String circuitId, String nextHopPublicKey) {
         return new Message(
                 MessageType.CIRCUIT_CREATE_REQUEST,
                 null,
@@ -55,7 +55,7 @@ public class MessageBuilder {
         );
     }
 
-    public Message buildCircuitCreateMessageResponse(String circuitId, String nextHopPublicKey) {
+    public static Message buildCircuitCreateMessageResponse(String circuitId, String nextHopPublicKey) {
         return new Message(
                 MessageType.CREATE_CIRCUIT_RESPONSE,
                 null,

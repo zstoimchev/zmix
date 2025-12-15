@@ -30,7 +30,6 @@ public class NetworkManager {
     private ConcurrentHashMap<UUID, Peer> connectedPeers;
     private ConcurrentHashMap<String, Peer> pendingPeers;
     
-    private final MessageBuilder messageBuilder;
     private final Crypto crypto;
 
     private final MessageHandler messageHandler;
@@ -44,7 +43,6 @@ public class NetworkManager {
         this.connectedPeers = new ConcurrentHashMap<>();
         this.pendingPeers = new ConcurrentHashMap<>();
         this.crypto = new Crypto();
-        messageBuilder = new MessageBuilder();
 
         this.messageHandler = messageHandler;
         this.peerDiscoveryProtocol = new PeerDiscoveryProtocol(this);

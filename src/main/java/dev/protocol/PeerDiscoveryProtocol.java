@@ -1,6 +1,7 @@
 package dev.protocol;
 
 import dev.message.Message;
+import dev.message.MessageBuilder;
 import dev.message.payload.PeerResponsePayload;
 import dev.network.NetworkManager;
 import dev.network.peer.Peer;
@@ -56,7 +57,7 @@ public class PeerDiscoveryProtocol implements Protocol {
                 .limit(20)
                 .collect(Collectors.toList());
 
-        Message response = networkManager.getMessageBuilder().buildPeerResponseMessage(peerList);
+        Message response = MessageBuilder.buildPeerResponseMessage(peerList);
         peer.send(response);
         logger.info("Sent {} peers to: {}", peerList.size(), peer.getPeerId());
     }
@@ -92,13 +93,13 @@ public class PeerDiscoveryProtocol implements Protocol {
 
     public void requestPeers(Peer peer) {
         logger.info("Requesting peers from peer: {}", peer.getPeerId());
-        Message request = networkManager.getMessageBuilder().buildPeerRequestMessage();
+        Message request = MessageBuilder.buildPeerRequestMessage();
         peer.send(request);
     }
 
     public void broadcastPeerRequest() {
         logger.info("Broadcasting peer request to all connected peers");
-        Message request = networkManager.getMessageBuilder().buildPeerRequestMessage();
+        Message request = MessageBuilder.buildPeerRequestMessage();
 
         for (Peer peer : networkManager.getConnectedPeers().values()) {
             peer.send(request);
