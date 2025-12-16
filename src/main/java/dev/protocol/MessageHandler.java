@@ -38,13 +38,13 @@ public class MessageHandler extends Thread implements Protocol {
 
         while (isRunning.get() && !Thread.currentThread().isInterrupted()) {
             try {
-                Event event = messageQueue.queue.take();
-                if (history.contains(event.message.getMessageId())) {
+                Event event = messageQueue.getQueue().take();
+                if (history.contains(event.message().getMessageId())) {
                     continue;
                 }
 
-                history.add(event.message.getMessageId());
-                digest(event.getSender(), event.getMessage());
+                history.add(event.message().getMessageId());
+                digest(event.sender(), event.message());
             } catch (InterruptedException e) {
                 logger.info("MessageProcessor interrupted");
                 Thread.currentThread().interrupt();

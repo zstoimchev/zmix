@@ -20,7 +20,7 @@ public class Main {
         this.config = Config.load(args[0]);
         MessageQueue queue = new MessageQueue();
         this.messageHandler = new MessageHandler(queue);
-        NetworkManager networkManager = new NetworkManager(config, messageHandler);
+        NetworkManager networkManager = new NetworkManager(config, messageHandler, queue);
         this.server = new Server(config, queue, networkManager);
     }
 

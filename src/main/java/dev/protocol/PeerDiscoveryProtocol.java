@@ -6,22 +6,23 @@ import dev.message.payload.PeerResponsePayload;
 import dev.network.NetworkManager;
 import dev.network.peer.Peer;
 import dev.network.peer.PeerInfo;
+import dev.utils.Config;
 import dev.utils.Logger;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class PeerDiscoveryProtocol implements Protocol {
     private final Logger logger;
     private final NetworkManager networkManager;
     private final Map<String, PeerInfo> knownPeers;
+    private final Config config;
 
-    public PeerDiscoveryProtocol(NetworkManager networkManager) {
+    public PeerDiscoveryProtocol(NetworkManager networkManager, Config config) {
         this.logger = Logger.getLogger(this.getClass());
         this.networkManager = networkManager;
         this.knownPeers = new HashMap<>();
+        this.config = config;
     }
 
     @Override
@@ -32,12 +33,6 @@ public class PeerDiscoveryProtocol implements Protocol {
                 break;
             case PEER_DISCOVERY_RESPONSE:
                 handlePeerDiscoveryResponse(peer, message);
-                break;
-            case CIRCUIT_CREATE_REQUEST:
-                // call handleCircuitCreateRequest(peer, message);
-                break;
-            case CREATE_CIRCUIT_RESPONSE:
-                // call handleCircuitCreateResponse(peer, message);
                 break;
             default:
                 logger.warn("PeerDiscoveryProtocol received unexpected message type: {}", message.getMessageType());
@@ -86,9 +81,6 @@ public class PeerDiscoveryProtocol implements Protocol {
         }
 
         logger.info("Discovered {} new peers (total known: {})", newPeers, knownPeers.size());
-        // TODO: attempt to connect to some of the new peers
-        // or maybe schedule connection attempts later ? ? ?
-        // connectToNewPeers();
     }
 
     public void requestPeers(Peer peer) {
@@ -103,6 +95,23 @@ public class PeerDiscoveryProtocol implements Protocol {
 
         for (Peer peer : networkManager.getConnectedPeers().values()) {
             peer.send(request);
+        }
+    }
+
+    public void initPeerDiscovery() {
+        logger.info("Initializing peer discovery");
+        // broadcastPeerRequest();
+
+//        Collections.shuffle((List<?>) networkManager.getPendingPeers());
+
+        ArrayList<Peer> peers = new ArrayList<>(networkManager.getPendingPeers().values());
+        Collections.shuffle(peers);
+
+        while(networkManager.getConnectedPeers().size() <= config.getMaxConnections()) {
+            for (Peer peer : networkManager.getPendingPeers().values()) {
+                // create a connection to the peer
+                networkManager.connectToPeer(peer.getIp(), peer.getPort());
+            }
         }
     }
 }

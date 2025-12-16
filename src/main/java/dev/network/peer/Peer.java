@@ -80,11 +80,12 @@ public class Peer implements Runnable {
             networkManager.registerPeer(this);
             networkManager.getPeerDiscoveryProtocol().requestPeers(this); // TODO: remove reference to PeerDiscoveryProtocol
             this.isRunning.set(true);
+//            networkManager.startPeerDiscovery();
 
             while (this.isRunning.get()) {
                 try {
                     Message message = MessageSerializer.deserialize(in.readLine());
-                    messageQueue.queue.add(new Event(this, message));
+                    messageQueue.getQueue().add(new Event(this, message));
                     logger.debug("Queued message from {}", this.peerId);
                 } catch (IOException e) {
                     logger.error("Could not read message from peer: " + e.getMessage(), e);

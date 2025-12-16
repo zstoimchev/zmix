@@ -22,4 +22,3 @@ public class Message {
 
     private MessagePayload payload;
 }
-
