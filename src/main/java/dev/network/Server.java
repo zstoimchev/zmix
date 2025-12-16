@@ -34,8 +34,9 @@ public class Server extends Thread {
     public void run() {
         try (ServerSocket serverSocket = new ServerSocket(config.getNodePort())) {
             logger.info("Server started and waiting for connections on port " + config.getNodePort());
-
+logger.debug("S E R V E R O N P O R T 111111111111111111111");
             if (!config.isBootstrapNode()) connectToBootstrapNodes();
+            logger.debug("S E R V E R O N P O R T 222222222222222222222");
 
             while (!this.isInterrupted()) {
                 Socket clientSocket = serverSocket.accept();
@@ -46,6 +47,7 @@ public class Server extends Thread {
                 logger.info(" -> Remote Port: " + clientSocket.getPort());
                 logger.info("-------------------------");
                 peerExecutor.submit(new Peer(clientSocket, queue, networkManager, PeerDirection.INBOUND));
+                logger.debug("S E R V E R O N P O R T 333333333333333333");
             }
         } catch (BindException e) {
             logger.error("Port " + config.getNodePort() + " is already in use.", e);

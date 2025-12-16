@@ -12,6 +12,7 @@ public class Main {
     private final Logger logger;
     private final Config config;
     private final Server server;
+    private final NetworkManager networkManager;
     private final MessageHandler messageHandler;
 
     // DI and registering all the configuration
@@ -20,7 +21,7 @@ public class Main {
         this.config = Config.load(args[0]);
         MessageQueue queue = new MessageQueue();
         this.messageHandler = new MessageHandler(queue);
-        NetworkManager networkManager = new NetworkManager(config, messageHandler, queue);
+        this.networkManager = new NetworkManager(config, messageHandler, queue);
         this.server = new Server(config, queue, networkManager);
     }
 
@@ -34,5 +35,6 @@ public class Main {
         logger.info("Starting network on port: {}...", config.getNodePort());
         this.server.start();
         this.messageHandler.start();
+        this.networkManager.start();
     }
 }

@@ -10,19 +10,22 @@ import dev.utils.Config;
 import dev.utils.Logger;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 public class PeerDiscoveryProtocol implements Protocol {
     private final Logger logger;
     private final NetworkManager networkManager;
     private final Map<String, PeerInfo> knownPeers;
-    private final Config config;
 
-    public PeerDiscoveryProtocol(NetworkManager networkManager, Config config) {
+    public PeerDiscoveryProtocol(NetworkManager networkManager) {
         this.logger = Logger.getLogger(this.getClass());
         this.networkManager = networkManager;
-        this.knownPeers = new HashMap<>();
-        this.config = config;
+        this.knownPeers = new ConcurrentHashMap<>();
+    }
+
+    public Collection<PeerInfo> getKnownPeers() {
+        return knownPeers.values();
     }
 
     @Override
@@ -73,14 +76,14 @@ public class PeerDiscoveryProtocol implements Protocol {
             Integer port = peerInfo.port;
 
             if (publicKey != null && host != null && port != null) {
-                if (!knownPeers.containsKey(publicKey)) {
-                    knownPeers.put(publicKey, peerInfo);
+                if (!networkManager.getKnownPeers().containsKey(publicKey)) {
+                    networkManager.getKnownPeers().put(publicKey, peerInfo);
                     newPeers++;
                 }
             }
         }
 
-        logger.info("Discovered {} new peers (total known: {})", newPeers, knownPeers.size());
+        logger.info("Discovered {} new peers (total known: {})", newPeers, networkManager.getKnownPeers().size());
     }
 
     public void requestPeers(Peer peer) {
@@ -95,23 +98,6 @@ public class PeerDiscoveryProtocol implements Protocol {
 
         for (Peer peer : networkManager.getConnectedPeers().values()) {
             peer.send(request);
-        }
-    }
-
-    public void initPeerDiscovery() {
-        logger.info("Initializing peer discovery");
-        // broadcastPeerRequest();
-
-//        Collections.shuffle((List<?>) networkManager.getPendingPeers());
-
-        ArrayList<Peer> peers = new ArrayList<>(networkManager.getPendingPeers().values());
-        Collections.shuffle(peers);
-
-        while(networkManager.getConnectedPeers().size() <= config.getMaxConnections()) {
-            for (Peer peer : networkManager.getPendingPeers().values()) {
-                // create a connection to the peer
-                networkManager.connectToPeer(peer.getIp(), peer.getPort());
-            }
         }
     }
 }
