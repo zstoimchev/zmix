@@ -64,5 +64,13 @@ public class Config {
         return Integer.parseInt(properties.getProperty("bootstrap.port", "12137"));
     }
 
+    public int getPeerDiscoveryInitialDelayInSeconds() {
+        return Integer.parseInt(properties.getProperty("peer.discovery.delay.initial", "30"));
+    }
+
+    public int getPeerDiscoveryDelayInSeconds() {
+        return Integer.parseInt(properties.getProperty("peer.discovery.delay", "60"));
+    }
+
     // TODO: method for verifying config values (integers specifically)
 }

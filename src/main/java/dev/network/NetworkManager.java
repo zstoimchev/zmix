@@ -68,9 +68,8 @@ public class NetworkManager {
 
         scheduler.scheduleWithFixedDelay(
                 this::runPeerDiscovery,
-                5,
-//                config.getPeerDiscoveryIntervalSeconds(),
-                5,
+                config.getPeerDiscoveryInitialDelayInSeconds(),
+                config.getPeerDiscoveryDelayInSeconds(),
                 TimeUnit.SECONDS
         );
     }
@@ -130,11 +129,14 @@ public class NetworkManager {
         }
 
         List<PeerInfo> candidates = new ArrayList<>(peerDiscoveryProtocol.getKnownPeers());
-
         Collections.shuffle(candidates);
 
+        logger.debug(" - - - - - - - - - - - - - - - - - - - - - - - - - - - " + peerDiscoveryProtocol.getKnownPeers().size());
+        logger.debug(" - - - - - - - - - - - - - - - - - - - - - - - - - - - " + candidates.size());
+
         for (PeerInfo info : candidates) {
-            if (connectedPeers.size() >= config.getMaxConnections()) break;
+
+            if (connectedPeers.size() < config.getMaxConnections()) break;
             connectToPeer(info.host, info.port);
         }
     }
