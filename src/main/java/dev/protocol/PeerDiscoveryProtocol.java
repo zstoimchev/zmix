@@ -92,7 +92,7 @@ public class PeerDiscoveryProtocol implements Protocol {
     }
 
     public void requestPeers(Peer peer) {
-        logger.info("Requesting peers from peer: {}", peer.getPeerId());
+        logger.info(" > > > > > > > > > > > > > > > > > > > Requesting peers from peer: {}", peer.getPeerId());
         Message request = MessageBuilder.buildPeerRequestMessage();
         peer.send(request);
     }

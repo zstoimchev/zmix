@@ -1,5 +1,7 @@
 package dev.network;
 
+import dev.message.Message;
+import dev.message.MessageBuilder;
 import dev.message.enums.MessageType;
 import dev.network.peer.Peer;
 import dev.network.peer.PeerDirection;
@@ -117,9 +119,7 @@ public class NetworkManager {
             return;
         }
 
-        //
-
-        List<PeerInfo> candidates = new ArrayList<>(peerDiscoveryProtocol.getKnownPeers());
+        List<PeerInfo> candidates = new ArrayList<>(getKnownPeers());
         Collections.shuffle(candidates);
 
         logger.debug(" - - - - - - - - - - - - - - - - - - - - - - - - - - - Connected peers: " + getConnectedPeers().size());
@@ -129,8 +129,25 @@ public class NetworkManager {
         for (PeerInfo info : candidates) {
             logger.debug(" - - - - - - - - - connecting - - - - - - - - - - - - - - - - - - " + candidates.size());
 
-            if (connectedPeers.size() < config.getMaxConnections()) break;
+            if (connectedPeers.size() > config.getMaxConnections()) break;
             connectToPeer(info.host, info.port);
+        }
+    }
+
+    private void initializePeerDiscovery() {
+        Message peerRequest = MessageBuilder.buildPeerRequestMessage();
+        broadcast(peerRequest);
+    }
+
+    public void broadcast(Message message) {
+        logger.debug("Broadcasting message type {} to {} peers", message.getMessageType(), connectedPeers.size());
+
+        for (Peer peer : connectedPeers.values()) {
+            try {
+                peer.send(message);
+            } catch (Exception e) {
+                logger.error("Failed to send message to peer: {}", peer.getPeerId(), e);
+            }
         }
     }
 
