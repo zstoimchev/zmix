@@ -119,10 +119,10 @@ public class NetworkManager {
             return;
         }
 
-//        List<PeerInfo> candidates = new ArrayList<>(getKnownPeers());
         List<PeerInfo> candidates = new ArrayList<>(knownPeers.stream()
-                .filter(peer -> !connectedPeers.containsKey(peer.getPublicKey()))
-                .filter(peerInfo -> !peerInfo.getPublicKey().equals(getEncodedPublicKey()))
+                .filter(peer ->
+                        !connectedPeers.containsKey(peer.getPublicKey()) &&
+                                !peer.getPublicKey().equals(getEncodedPublicKey()))
                 .toList());
 
         Collections.shuffle(candidates);
@@ -132,10 +132,7 @@ public class NetworkManager {
         logger.debug(" - - - - - - - - - - - - - - - - - - - - - - - - - - - Candidate peers: " + candidates.size());
 
         for (PeerInfo info : candidates) {
-            logger.debug(" - - - - - - - - - connecting - - - - - - - - - - - - - - - - - - " + candidates.size());
-
             if (connectedPeers.size() > config.getMaxConnections()) break;
-            if (isAlreadyConnected(info)) continue;
             connectToPeer(info.host, info.port);
         }
     }
