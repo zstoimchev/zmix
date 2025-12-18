@@ -77,7 +77,7 @@ public class PeerDiscoveryProtocol implements Protocol {
 
             if (publicKey != null && host != null && port != null) {
                 PeerInfo newPeerInfo = new PeerInfo(publicKey, host, port);
-                if (!networkManager.getKnownPeers().contains(peerInfo) && !isSelf(newPeerInfo.getPublicKey())) {
+                if (!isKnown(newPeerInfo) && !isSelf(newPeerInfo.getPublicKey())) {
                     networkManager.addKnownPeer(newPeerInfo);
                     newPeers++;
                 }
@@ -87,8 +87,12 @@ public class PeerDiscoveryProtocol implements Protocol {
         logger.info("Discovered {} new peers (total known: {})", newPeers, networkManager.getKnownPeers().size());
     }
 
+    private boolean isKnown(PeerInfo peerInfo) {
+        return knownPeers.values().stream().anyMatch(p -> p.getPublicKey().equals(peerInfo.getPublicKey()));
+    }
+
     private boolean isSelf(String publicKey) {
-        return networkManager.getEncodedPublicKey() .equals(publicKey);
+        return networkManager.getEncodedPublicKey().equals(publicKey);
     }
 
     public void requestPeers(Peer peer) {

@@ -32,7 +32,7 @@ public class NetworkManager {
     private final ExecutorService peerExecutor;
 
     private final Config config;
-    private final ConcurrentHashMap<UUID, Peer> connectedPeers;
+    private final ConcurrentHashMap<String, Peer> connectedPeers;
     private final ConcurrentHashMap<String, Peer> pendingPeers;
     private final List<PeerInfo> knownPeers;
     
@@ -80,7 +80,7 @@ public class NetworkManager {
             logger.warn("Max peers reached. Cannot register new peer: {}", peer.getPeerId());
             return;
         }
-        connectedPeers.put(peer.getPeerId(), peer);
+        connectedPeers.put(peer.getPublicKeyBase64Encoded(), peer);
         knownPeers.add(new PeerInfo(
                 peer.getPublicKeyBase64Encoded(),
                 peer.getIp(),
@@ -92,7 +92,7 @@ public class NetworkManager {
     }
 
     public void unregisterPeer(Peer peer) {
-        connectedPeers.remove(peer.getPeerId());
+        connectedPeers.remove(peer.getPublicKeyBase64Encoded());
         logger.info("Unregistered peer: {}", peer.getPeerId());
     }
 
@@ -119,7 +119,12 @@ public class NetworkManager {
             return;
         }
 
-        List<PeerInfo> candidates = new ArrayList<>(getKnownPeers());
+//        List<PeerInfo> candidates = new ArrayList<>(getKnownPeers());
+        List<PeerInfo> candidates = new ArrayList<>(knownPeers.stream()
+                .filter(peer -> !connectedPeers.containsKey(peer.getPublicKey()))
+                .filter(peerInfo -> !peerInfo.getPublicKey().equals(getEncodedPublicKey()))
+                .toList());
+
         Collections.shuffle(candidates);
 
         logger.debug(" - - - - - - - - - - - - - - - - - - - - - - - - - - - Connected peers: " + getConnectedPeers().size());
@@ -130,8 +135,13 @@ public class NetworkManager {
             logger.debug(" - - - - - - - - - connecting - - - - - - - - - - - - - - - - - - " + candidates.size());
 
             if (connectedPeers.size() > config.getMaxConnections()) break;
+            if (isAlreadyConnected(info)) continue;
             connectToPeer(info.host, info.port);
         }
+    }
+
+    private boolean isAlreadyConnected(PeerInfo info) {
+        return connectedPeers.containsKey(info.publicKey);
     }
 
     private void initializePeerDiscovery() {
