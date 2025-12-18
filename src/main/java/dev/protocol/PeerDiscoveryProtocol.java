@@ -6,7 +6,6 @@ import dev.message.payload.PeerResponsePayload;
 import dev.network.NetworkManager;
 import dev.network.peer.Peer;
 import dev.network.peer.PeerInfo;
-import dev.utils.Config;
 import dev.utils.Logger;
 
 import java.util.*;
@@ -45,15 +44,16 @@ public class PeerDiscoveryProtocol implements Protocol {
     private void handlePeerDiscoveryRequest(Peer peer, Message message) {
         logger.info("Received peer request from: {}", peer.getPeerId());
 
-        List<PeerInfo> peerList = networkManager.getConnectedPeers().values().stream()
-                .filter(p -> !p.getPeerId().equals(peer.getPeerId()))
-                .map(p -> new PeerInfo(
-                        p.getPublicKeyBase64Encoded(),
-                        p.getIp(),
-                        p.getPort()
-                ))
-                .limit(20)
-                .collect(Collectors.toList());
+        List<PeerInfo> peerList = networkManager.getKnownPeers();
+//        List<PeerInfo> peerList = networkManager.getConnectedPeers().values().stream()
+//                .filter(p -> !p.getPeerId().equals(peer.getPeerId()))
+//                .map(p -> new PeerInfo(
+//                        p.getPublicKeyBase64Encoded(),
+//                        p.getIp(),
+//                        p.getPort()
+//                ))
+//                .limit(20)
+//                .collect(Collectors.toList());
 
         Message response = MessageBuilder.buildPeerResponseMessage(peerList);
         peer.send(response);
@@ -76,14 +76,19 @@ public class PeerDiscoveryProtocol implements Protocol {
             Integer port = peerInfo.port;
 
             if (publicKey != null && host != null && port != null) {
-                if (!networkManager.getKnownPeers().containsKey(publicKey)) {
-                    networkManager.getKnownPeers().put(publicKey, peerInfo);
+                PeerInfo newPeerInfo = new PeerInfo(publicKey, host, port);
+                if (!networkManager.getKnownPeers().contains(peerInfo) && !isSelf(newPeerInfo.getPublicKey())) {
+                    networkManager.addKnownPeer(newPeerInfo);
                     newPeers++;
                 }
             }
         }
 
         logger.info("Discovered {} new peers (total known: {})", newPeers, networkManager.getKnownPeers().size());
+    }
+
+    private boolean isSelf(String publicKey) {
+        return networkManager.getEncodedPublicKey() .equals(publicKey);
     }
 
     public void requestPeers(Peer peer) {

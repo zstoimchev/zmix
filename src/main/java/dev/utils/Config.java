@@ -45,15 +45,7 @@ public class Config {
     }
 
     public int getMaxConnections() {
-        return getOutboundConnectionLimit() + getInboundConnectionLimit();
-    }
-
-    public int getInboundConnectionLimit() {
-        return Integer.parseInt(properties.getProperty("node.connections.inbound.max", "3"));
-    }
-
-    public int getOutboundConnectionLimit() {
-        return Integer.parseInt(properties.getProperty("node.connections.outbound.max", "3"));
+        return Integer.parseInt(properties.getProperty("node.connections.max", "3"));
     }
 
     public String getBootstrapNodeHost() {

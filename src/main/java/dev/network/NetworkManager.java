@@ -1,6 +1,5 @@
 package dev.network;
 
-import dev.message.Message;
 import dev.message.enums.MessageType;
 import dev.network.peer.Peer;
 import dev.network.peer.PeerDirection;
@@ -33,7 +32,7 @@ public class NetworkManager {
     private final Config config;
     private final ConcurrentHashMap<UUID, Peer> connectedPeers;
     private final ConcurrentHashMap<String, Peer> pendingPeers;
-    private final Map<String, PeerInfo> knownPeers;
+    private final List<PeerInfo> knownPeers;
     
     private final Crypto crypto;
     private final MessageQueue queue;
@@ -52,7 +51,7 @@ public class NetworkManager {
         this.config = config;
         this.connectedPeers = new ConcurrentHashMap<>();
         this.pendingPeers = new ConcurrentHashMap<>();
-        this.knownPeers = new ConcurrentHashMap<>();
+        this.knownPeers = new ArrayList<>();
         this.crypto = new Crypto();
         this.queue = queue;
 
@@ -67,7 +66,7 @@ public class NetworkManager {
         isRunning.set(true);
 
         scheduler.scheduleWithFixedDelay(
-                this::runPeerDiscovery,
+                this::startPeerMaintenance,
                 config.getPeerDiscoveryInitialDelayInSeconds(),
                 config.getPeerDiscoveryDelayInSeconds(),
                 TimeUnit.SECONDS
@@ -80,12 +79,14 @@ public class NetworkManager {
             return;
         }
         connectedPeers.put(peer.getPeerId(), peer);
-        knownPeers.put(peer.getPeerId().toString(), new PeerInfo(
+        knownPeers.add(new PeerInfo(
                 peer.getPublicKeyBase64Encoded(),
                 peer.getIp(),
                 peer.getPort()
         ));
         logger.info("Registered peer: {}", peer.getPeerId());
+        logger.debug(" -------------------------------------> Connected peers: {}", getConnectedPeers().size());
+        logger.debug(" -------------------------------------> Known peers: {}", getKnownPeers().size());
     }
 
     public void unregisterPeer(Peer peer) {
@@ -101,18 +102,6 @@ public class NetworkManager {
         return Base64.getEncoder().encodeToString(getPublicKey().getEncoded());
     }
 
-    public void broadcast(Message message) {
-        logger.debug("Broadcasting message type {} to {} peers", message.getMessageType(), connectedPeers.size());
-
-        for (Peer peer : connectedPeers.values()) {
-            try {
-                peer.send(message);
-            } catch (Exception e) {
-                logger.error("Failed to send message to peer: {}", peer.getPeerId(), e);
-            }
-        }
-    }
-
     // Register protocols in Message Handler
     private void registerProtocols() {
         messageHandler.registerProtocol(MessageType.PEER_DISCOVERY_REQUEST, peerDiscoveryProtocol);
@@ -120,21 +109,25 @@ public class NetworkManager {
         logger.info("Registered all protocol handlers");
     }
 
-    public void runPeerDiscovery() {
-        logger.debug("R U N N I N G   P E E R   D I S C O V E R Y . . . ");
+    public void startPeerMaintenance() {
+        logger.debug("A T T E M P T I N G   T O   C O N N E C T   T O   N E W   P E E R S . . . ");
         if (!isRunning.get()) return;
 
         if (connectedPeers.size() >= config.getMaxConnections()) {
             return;
         }
 
+        //
+
         List<PeerInfo> candidates = new ArrayList<>(peerDiscoveryProtocol.getKnownPeers());
         Collections.shuffle(candidates);
 
-        logger.debug(" - - - - - - - - - - - - - - - - - - - - - - - - - - - " + peerDiscoveryProtocol.getKnownPeers().size());
-        logger.debug(" - - - - - - - - - - - - - - - - - - - - - - - - - - - " + candidates.size());
+        logger.debug(" - - - - - - - - - - - - - - - - - - - - - - - - - - - Connected peers: " + getConnectedPeers().size());
+        logger.debug(" - - - - - - - - - - - - - - - - - - - - - - - - - - - Known peers: " + getKnownPeers().size());
+        logger.debug(" - - - - - - - - - - - - - - - - - - - - - - - - - - - Candidate peers: " + candidates.size());
 
         for (PeerInfo info : candidates) {
+            logger.debug(" - - - - - - - - - connecting - - - - - - - - - - - - - - - - - - " + candidates.size());
 
             if (connectedPeers.size() < config.getMaxConnections()) break;
             connectToPeer(info.host, info.port);
@@ -149,5 +142,9 @@ public class NetworkManager {
         } catch (IOException e) {
             throw new CustomException("Failed connecting to new peer", e);
         }
+    }
+
+    public void addKnownPeer(PeerInfo peerInfo) {
+        this.knownPeers.add(peerInfo);
     }
 }

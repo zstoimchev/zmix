@@ -78,7 +78,7 @@ public class Peer implements Runnable {
             }
 
             networkManager.registerPeer(this);
-            networkManager.getPeerDiscoveryProtocol().requestPeers(this); // TODO: remove reference to PeerDiscoveryProtocol
+//            networkManager.getPeerDiscoveryProtocol().requestPeers(this); // TODO: remove reference to PeerDiscoveryProtocol
             this.isRunning.set(true);
 //            networkManager.runPeerDiscovery();
 
