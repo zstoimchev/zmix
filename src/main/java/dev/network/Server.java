@@ -39,8 +39,8 @@ public class Server extends Thread {
             while (!this.isInterrupted()) {
                 Socket clientSocket = serverSocket.accept();
                 logger.info("======= New connection: =======");
-                logger.info(" -> Remote IP:   " + clientSocket.getInetAddress().getHostAddress());
-                logger.info(" -> Remote Port: " + clientSocket.getPort());
+                logger.info("  -> Remote IP:   " + clientSocket.getInetAddress().getHostAddress());
+                logger.info("  -> Remote Port: " + clientSocket.getPort());
                 logger.info("===============================");
                 peerExecutor.submit(new Peer(clientSocket, queue, networkManager, PeerDirection.INBOUND));
             }

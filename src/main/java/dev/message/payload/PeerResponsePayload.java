@@ -10,4 +10,14 @@ import java.util.List;
 @AllArgsConstructor
 public class PeerResponsePayload extends MessagePayload{
     private final List<PeerInfo> peerList;
+
+    @Override
+    public String toString() {
+        return "PeerResponsePayload{" +
+                "peerList=" + (peerList == null ? "null" :
+                peerList.stream()
+                        .map(PeerInfo::toString)
+                        .toList()) +
+                '}';
+    }
 }

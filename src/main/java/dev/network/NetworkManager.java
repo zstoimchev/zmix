@@ -33,7 +33,6 @@ public class NetworkManager {
 
     private final Config config;
     private final ConcurrentHashMap<String, Peer> connectedPeers;
-    private final ConcurrentHashMap<String, Peer> pendingPeers;
     private final List<PeerInfo> knownPeers;
     
     private final Crypto crypto;
@@ -52,7 +51,6 @@ public class NetworkManager {
         this.peerExecutor = Executors.newCachedThreadPool();
         this.config = config;
         this.connectedPeers = new ConcurrentHashMap<>();
-        this.pendingPeers = new ConcurrentHashMap<>();
         this.knownPeers = new ArrayList<>();
         this.crypto = new Crypto();
         this.queue = queue;
@@ -81,14 +79,13 @@ public class NetworkManager {
             return;
         }
         connectedPeers.put(peer.getPublicKeyBase64Encoded(), peer);
-        knownPeers.add(new PeerInfo(
-                peer.getPublicKeyBase64Encoded(),
-                peer.getIp(),
-                peer.getPort()
-        ));
+        if (knownPeers.stream().noneMatch(p -> p.getPublicKey().equals(peer.getPublicKeyBase64Encoded())))
+            knownPeers.add(new PeerInfo(
+                    peer.getPublicKeyBase64Encoded(),
+                    peer.getIp(),
+                    peer.getPort()
+            ));
         logger.info("Registered peer: {}", peer.getPeerId());
-        logger.debug(" -------------------------------------> Connected peers: {}", getConnectedPeers().size());
-        logger.debug(" -------------------------------------> Known peers: {}", getKnownPeers().size());
     }
 
     public void unregisterPeer(Peer peer) {
@@ -112,7 +109,9 @@ public class NetworkManager {
     }
 
     public void startPeerMaintenance() {
-        logger.debug("A T T E M P T I N G   T O   C O N N E C T   T O   N E W   P E E R S . . . ");
+        logger.debug(" + - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +");
+
+        logger.debug("  >  A T T E M P T I N G   T O   C O N N E C T   T O   N E W   P E E R S  <  ");
         if (!isRunning.get()) return;
 
         if (connectedPeers.size() >= config.getMaxConnections()) {
@@ -127,9 +126,8 @@ public class NetworkManager {
 
         Collections.shuffle(candidates);
 
-        logger.debug(" - - - - - - - - - - - - - - - - - - - - - - - - - - - Connected peers: " + getConnectedPeers().size());
-        logger.debug(" - - - - - - - - - - - - - - - - - - - - - - - - - - - Known peers: " + getKnownPeers().size());
-        logger.debug(" - - - - - - - - - - - - - - - - - - - - - - - - - - - Candidate peers: " + candidates.size());
+        logger.debug("  >                  Connected: {}, Known: {}, Candidates: {}                <  ", getConnectedPeers().size(), getKnownPeers().size(), candidates.size());
+        logger.debug(" + - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - + \n");
 
         for (PeerInfo info : candidates) {
             if (connectedPeers.size() > config.getMaxConnections()) break;
