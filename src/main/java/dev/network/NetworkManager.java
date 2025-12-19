@@ -74,17 +74,22 @@ public class NetworkManager {
     }
 
     public void registerPeer(Peer peer) {
-        if (connectedPeers.size() >= config.getMaxConnections()) {
-            logger.warn("Max peers reached. Cannot register new peer: {}", peer.getPeerId());
-            return;
-        }
-        connectedPeers.put(peer.getPublicKeyBase64Encoded(), peer);
         if (knownPeers.stream().noneMatch(p -> p.getPublicKey().equals(peer.getPublicKeyBase64Encoded())))
             knownPeers.add(new PeerInfo(
                     peer.getPublicKeyBase64Encoded(),
                     peer.getIp(),
                     peer.getPort()
             ));
+
+        if (connectedPeers.size() >= config.getMaxConnections()) {
+            logger.warn("Max peers reached. Cannot register new peer: {}", peer.getPeerId());
+            Collections.shuffle(knownPeers);
+            peer.send(MessageBuilder.buildPeerResponseMessage(knownPeers.stream().limit(5).toList()));
+            peer.disconnect();
+            return;
+        }
+
+        connectedPeers.put(peer.getPublicKeyBase64Encoded(), peer);
         logger.info("Registered peer: {}", peer.getPeerId());
     }
 
@@ -109,9 +114,6 @@ public class NetworkManager {
     }
 
     public void startPeerMaintenance() {
-        logger.debug(" + - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - +");
-
-        logger.debug("  >  A T T E M P T I N G   T O   C O N N E C T   T O   N E W   P E E R S  <  ");
         if (!isRunning.get()) return;
 
         if (connectedPeers.size() >= config.getMaxConnections()) {
@@ -131,6 +133,7 @@ public class NetworkManager {
 
         for (PeerInfo info : candidates) {
             if (connectedPeers.size() > config.getMaxConnections()) break;
+            logger.debug(" ......................................................., {}, {}", info.host, info.port);
             connectToPeer(info.host, info.port);
         }
     }
@@ -168,5 +171,9 @@ public class NetworkManager {
 
     public void addKnownPeer(PeerInfo peerInfo) {
         this.knownPeers.add(peerInfo);
+    }
+
+    public boolean canAcceptConnections() {
+        return connectedPeers.size() < config.getMaxConnections();
     }
 }

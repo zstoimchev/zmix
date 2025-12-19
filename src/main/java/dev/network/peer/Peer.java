@@ -87,6 +87,10 @@ public class Peer implements Runnable {
             while (this.isRunning.get()) {
                 try {
                     Message message = MessageSerializer.deserialize(in.readLine());
+                    if (message == null) {
+                        disconnect();
+                        break;
+                    }
                     messageQueue.getQueue().add(new Event(this, message));
                 } catch (IOException e) {
                     logger.error("Could not read message from peer: " + e.getMessage(), e);
@@ -136,6 +140,10 @@ public class Peer implements Runnable {
         }
 
         Message message = MessageSerializer.deserialize(rawMessage);
+        if (message == null) {
+            disconnect();
+            return false;
+        }
 
         if (message.getMessageType() != MessageType.HANDSHAKE) {
             logger.warn("Expected {}, got: {}", MessageType.HANDSHAKE, message.getMessageType());
@@ -173,6 +181,7 @@ public class Peer implements Runnable {
 
     public void disconnect() {
         try {
+            isRunning.set(false);
             socket.close();
             networkManager.unregisterPeer(this);
             logger.warn("Closed connection with peer: {}", this.peerId);
