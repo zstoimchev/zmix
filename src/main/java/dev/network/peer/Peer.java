@@ -50,7 +50,7 @@ public class Peer implements Runnable {
         this.socket = socket;
         this.peerDirection = peerDirection;
         this.ip = socket.getLocalAddress().getHostAddress();
-        this.port = socket.getLocalPort();
+        this.port = socket.getPort();
         this.networkManager = networkManager;
         this.messageQueue = queue;
 

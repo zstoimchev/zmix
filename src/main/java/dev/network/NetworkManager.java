@@ -65,6 +65,8 @@ public class NetworkManager {
         logger.info("Starting network manager");
         isRunning.set(true);
 
+        initializePeerDiscovery();
+
         scheduler.scheduleWithFixedDelay(
                 this::startPeerMaintenance,
                 config.getPeerDiscoveryInitialDelayInSeconds(),
@@ -133,13 +135,9 @@ public class NetworkManager {
 
         for (PeerInfo info : candidates) {
             if (connectedPeers.size() > config.getMaxConnections()) break;
-            logger.debug(" ......................................................., {}, {}", info.host, info.port);
+            logger.debug(" ................................., {}, {}", info.host, info.port);
 //            connectToPeer(info.host, info.port);
         }
-    }
-
-    private boolean isAlreadyConnected(PeerInfo info) {
-        return connectedPeers.containsKey(info.publicKey);
     }
 
     private void initializePeerDiscovery() {
@@ -171,9 +169,5 @@ public class NetworkManager {
 
     public void addKnownPeer(PeerInfo peerInfo) {
         this.knownPeers.add(peerInfo);
-    }
-
-    public boolean canAcceptConnections() {
-        return connectedPeers.size() < config.getMaxConnections();
     }
 }

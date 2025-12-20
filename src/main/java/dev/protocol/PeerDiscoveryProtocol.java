@@ -9,22 +9,14 @@ import dev.network.peer.PeerInfo;
 import dev.utils.Logger;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 public class PeerDiscoveryProtocol implements Protocol {
     private final Logger logger;
     private final NetworkManager networkManager;
-    private final Map<String, PeerInfo> knownPeers;
 
     public PeerDiscoveryProtocol(NetworkManager networkManager) {
         this.logger = Logger.getLogger(this.getClass());
         this.networkManager = networkManager;
-        this.knownPeers = new ConcurrentHashMap<>();
-    }
-
-    public Collection<PeerInfo> getKnownPeers() {
-        return knownPeers.values();
     }
 
     @Override
@@ -76,7 +68,7 @@ public class PeerDiscoveryProtocol implements Protocol {
     }
 
     private boolean isKnown(PeerInfo peerInfo) {
-        boolean presentInKnown = knownPeers.values().stream().anyMatch(p -> p.getPublicKey().equals(peerInfo.getPublicKey()));
+        boolean presentInKnown = networkManager.getKnownPeers().stream().anyMatch(p -> p.getPublicKey().equals(peerInfo.getPublicKey()));
         boolean presentInConnected = networkManager.getConnectedPeers().values().stream().anyMatch(p -> p.getPublicKeyBase64Encoded().equals(peerInfo.getPublicKey()));
         return presentInKnown || presentInConnected;
     }
