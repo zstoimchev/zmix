@@ -134,7 +134,7 @@ public class NetworkManager {
         for (PeerInfo info : candidates) {
             if (connectedPeers.size() > config.getMaxConnections()) break;
             logger.debug(" ......................................................., {}, {}", info.host, info.port);
-            connectToPeer(info.host, info.port);
+//            connectToPeer(info.host, info.port);
         }
     }
 

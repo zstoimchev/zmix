@@ -45,7 +45,11 @@ public class Config {
     }
 
     public int getMaxConnections() {
-        return Integer.parseInt(properties.getProperty("node.connections.max", "3"));
+        return Integer.parseInt(properties.getProperty("node.connections.max", "5"));
+    }
+
+    public int getMinConnections() {
+        return Integer.parseInt(properties.getProperty("node.connections.min", "3"));
     }
 
     public String getBootstrapNodeHost() {
@@ -57,11 +61,19 @@ public class Config {
     }
 
     public int getPeerDiscoveryInitialDelayInSeconds() {
-        return Integer.parseInt(properties.getProperty("peer.discovery.delay.initial", "30"));
+        return Integer.parseInt(properties.getProperty("peer.discovery.init", "30"));
     }
 
     public int getPeerDiscoveryDelayInSeconds() {
         return Integer.parseInt(properties.getProperty("peer.discovery.delay", "60"));
+    }
+
+    public int getConnectionMaintenanceInitialDelayInSeconds() {
+        return Integer.parseInt(properties.getProperty("connection.maintenance.init", "30"));
+    }
+
+    public int getConnectionMaintenanceDelayInSeconds() {
+        return Integer.parseInt(properties.getProperty("connection.maintenance.delay", "60"));
     }
 
     // TODO: method for verifying config values (integers specifically)
