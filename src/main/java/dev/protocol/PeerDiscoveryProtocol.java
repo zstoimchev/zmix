@@ -4,19 +4,27 @@ import dev.message.Message;
 import dev.message.MessageBuilder;
 import dev.message.payload.PeerResponsePayload;
 import dev.network.NetworkManager;
+import dev.network.ConnectionManager;
 import dev.network.peer.Peer;
 import dev.network.peer.PeerInfo;
 import dev.utils.Logger;
 
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class PeerDiscoveryProtocol implements Protocol {
     private final Logger logger;
     private final NetworkManager networkManager;
+    private final ConnectionManager connectionManager;
+    private final ScheduledExecutorService scheduler;
 
     public PeerDiscoveryProtocol(NetworkManager networkManager) {
         this.logger = Logger.getLogger(this.getClass());
         this.networkManager = networkManager;
+        this.connectionManager = networkManager.getConnectionManager();
+        this.scheduler = Executors.newSingleThreadScheduledExecutor();
     }
 
     @Override
@@ -33,10 +41,18 @@ public class PeerDiscoveryProtocol implements Protocol {
         }
     }
 
+    public void init() {
+        scheduler.scheduleAtFixedRate(
+                this::broadcastPeerRequest,
+                networkManager.getConfig().getConnectionMaintenanceInitialDelayInSeconds(),
+                networkManager.getConfig().getConnectionMaintenanceDelayInSeconds(),
+                TimeUnit.MINUTES);
+    }
+
     private void handlePeerDiscoveryRequest(Peer peer, Message message) {
         logger.info("Received peer request from: {}", peer.getPeerId());
 
-        List<PeerInfo> peerList = networkManager.getKnownPeers();
+        List<PeerInfo> peerList = connectionManager.getKnownPeers();
         Message response = MessageBuilder.buildPeerResponseMessage(peerList);
         peer.send(response);
         logger.info("Sent {} peers to: {}", peerList.size(), peer.getPeerId());
@@ -59,17 +75,17 @@ public class PeerDiscoveryProtocol implements Protocol {
             if (publicKey != null && host != null && port != null) {
                 PeerInfo newPeerInfo = new PeerInfo(publicKey, host, port);
                 if (isKnown(newPeerInfo) || isSelf(newPeerInfo.getPublicKey())) continue;
-                networkManager.addKnownPeer(newPeerInfo);
+                connectionManager.addKnownPeer(newPeerInfo);
                 newPeers++;
             }
         }
 
-        logger.info("Discovered {} new peers (total known: {})", newPeers, networkManager.getKnownPeers().size());
+        logger.info("Discovered {} new peers (total known: {})", newPeers, connectionManager.getKnownPeers().size());
     }
 
     private boolean isKnown(PeerInfo peerInfo) {
-        boolean presentInKnown = networkManager.getKnownPeers().stream().anyMatch(p -> p.getPublicKey().equals(peerInfo.getPublicKey()));
-        boolean presentInConnected = networkManager.getConnectedPeers().values().stream().anyMatch(p -> p.getPublicKeyBase64Encoded().equals(peerInfo.getPublicKey()));
+        boolean presentInKnown = connectionManager.getKnownPeers().stream().anyMatch(p -> p.getPublicKey().equals(peerInfo.getPublicKey()));
+        boolean presentInConnected = connectionManager.getConnectedPeers().values().stream().anyMatch(p -> p.getPublicKeyBase64Encoded().equals(peerInfo.getPublicKey()));
         return presentInKnown || presentInConnected;
     }
 
@@ -84,11 +100,15 @@ public class PeerDiscoveryProtocol implements Protocol {
     }
 
     public void broadcastPeerRequest() {
-        logger.info("Broadcasting peer request to all connected peers");
-        Message request = MessageBuilder.buildPeerRequestMessage();
+        logger.debug("Broadcasting peer request to all connected peers: {}", connectionManager.getConnectedPeers().size());
+        Message message = MessageBuilder.buildPeerRequestMessage();
 
-        for (Peer peer : networkManager.getConnectedPeers().values()) {
-            peer.send(request);
+        for (Peer peer : connectionManager.getConnectedPeers().values()) {
+            try {
+                peer.send(message);
+            } catch (Exception e) {
+                logger.error("Failed to send message to peer: {}", peer.getPeerId(), e);
+            }
         }
     }
 }

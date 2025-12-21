@@ -4,6 +4,7 @@ import dev.message.Message;
 import dev.message.MessageBuilder;
 import dev.message.enums.MessageType;
 import dev.message.payload.HandshakePayload;
+import dev.network.ConnectionManager;
 import dev.network.Event;
 import dev.network.MessageQueue;
 import dev.network.NetworkManager;
@@ -32,6 +33,7 @@ public class Peer implements Runnable {
     @Getter
     private final int port;
     private final NetworkManager networkManager;
+    private final ConnectionManager connectionManager;
     private final MessageQueue messageQueue;
     private final BufferedReader in;
     private final BufferedWriter out;
@@ -52,6 +54,7 @@ public class Peer implements Runnable {
         this.ip = socket.getLocalAddress().getHostAddress();
         this.port = socket.getPort();
         this.networkManager = networkManager;
+        this.connectionManager = networkManager.getConnectionManager();
         this.messageQueue = queue;
 
         try {

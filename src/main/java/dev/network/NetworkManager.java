@@ -1,11 +1,8 @@
 package dev.network;
 
-import dev.message.Message;
-import dev.message.MessageBuilder;
 import dev.message.enums.MessageType;
 import dev.network.peer.Peer;
 import dev.network.peer.PeerDirection;
-import dev.network.peer.PeerInfo;
 import dev.protocol.MessageHandler;
 import dev.protocol.PeerDiscoveryProtocol;
 import dev.utils.Config;
@@ -17,7 +14,6 @@ import lombok.Setter;
 
 import java.io.IOException;
 import java.net.Socket;
-import java.security.PublicKey;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -30,13 +26,12 @@ public class NetworkManager {
 
     private AtomicBoolean isRunning = new AtomicBoolean(false);
     private final ExecutorService peerExecutor;
-
     private final Config config;
-    private final ConcurrentHashMap<String, Peer> connectedPeers;
-    private final List<PeerInfo> knownPeers;
-    
+    private final ConnectionManager connectionManager;
+
     private final Crypto crypto;
     private final MessageQueue queue;
+    private final String encodedPublicKey;
 
     private final MessageHandler messageHandler;
 
@@ -50,9 +45,9 @@ public class NetworkManager {
         this.nodeId = UUID.randomUUID();
         this.peerExecutor = Executors.newCachedThreadPool();
         this.config = config;
-        this.connectedPeers = new ConcurrentHashMap<>();
-        this.knownPeers = new ArrayList<>();
+        this.connectionManager = new ConnectionManager(this);
         this.crypto = new Crypto();
+        this.encodedPublicKey = Base64.getEncoder().encodeToString(crypto.getPublicKey().getEncoded());
         this.queue = queue;
 
         this.messageHandler = messageHandler;
@@ -64,97 +59,16 @@ public class NetworkManager {
     public void start() {
         logger.info("Starting network manager");
         isRunning.set(true);
-
-        initializePeerDiscovery();
-
-        scheduler.scheduleWithFixedDelay(
-                this::startPeerMaintenance,
-                config.getPeerDiscoveryInitialDelayInSeconds(),
-                config.getPeerDiscoveryDelayInSeconds(),
-                TimeUnit.SECONDS
-        );
+        peerDiscoveryProtocol.init();
+        connectionManager.init();
     }
 
     public void registerPeer(Peer peer) {
-        if (knownPeers.stream().noneMatch(p -> p.getPublicKey().equals(peer.getPublicKeyBase64Encoded())))
-            knownPeers.add(new PeerInfo(
-                    peer.getPublicKeyBase64Encoded(),
-                    peer.getIp(),
-                    peer.getPort()
-            ));
-
-        if (connectedPeers.size() >= config.getMaxConnections()) {
-            logger.warn("Max peers reached. Cannot register new peer: {}", peer.getPeerId());
-            Collections.shuffle(knownPeers);
-            peer.send(MessageBuilder.buildPeerResponseMessage(knownPeers.stream().limit(5).toList()));
-            peer.disconnect();
-            return;
-        }
-
-        connectedPeers.put(peer.getPublicKeyBase64Encoded(), peer);
-        logger.info("Registered peer: {}", peer.getPeerId());
+        connectionManager.registerPeer(peer);
     }
 
     public void unregisterPeer(Peer peer) {
-        connectedPeers.remove(peer.getPublicKeyBase64Encoded());
-        logger.info("Unregistered peer: {}", peer.getPeerId());
-    }
-
-    public PublicKey getPublicKey() {
-        return crypto.getPublicKey();
-    }
-
-    public String getEncodedPublicKey() {
-        return Base64.getEncoder().encodeToString(getPublicKey().getEncoded());
-    }
-
-    // Register protocols in Message Handler
-    private void registerProtocols() {
-        messageHandler.registerProtocol(MessageType.PEER_DISCOVERY_REQUEST, peerDiscoveryProtocol);
-        messageHandler.registerProtocol(MessageType.PEER_DISCOVERY_RESPONSE, peerDiscoveryProtocol);
-        logger.info("Registered all protocol handlers");
-    }
-
-    public void startPeerMaintenance() {
-        if (!isRunning.get()) return;
-
-        if (connectedPeers.size() >= config.getMaxConnections()) {
-            return;
-        }
-
-        List<PeerInfo> candidates = new ArrayList<>(knownPeers.stream()
-                .filter(peer ->
-                        !connectedPeers.containsKey(peer.getPublicKey()) &&
-                                !peer.getPublicKey().equals(getEncodedPublicKey()))
-                .toList());
-
-        Collections.shuffle(candidates);
-
-        logger.debug("  >                  Connected: {}, Known: {}, Candidates: {}                <  ", getConnectedPeers().size(), getKnownPeers().size(), candidates.size());
-        logger.debug(" + - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - + \n");
-
-        for (PeerInfo info : candidates) {
-            if (connectedPeers.size() > config.getMaxConnections()) break;
-            logger.debug(" ................................., {}, {}", info.host, info.port);
-//            connectToPeer(info.host, info.port);
-        }
-    }
-
-    private void initializePeerDiscovery() {
-        Message peerRequest = MessageBuilder.buildPeerRequestMessage();
-        broadcast(peerRequest);
-    }
-
-    public void broadcast(Message message) {
-        logger.debug("Broadcasting message type {} to {} peers", message.getMessageType(), connectedPeers.size());
-
-        for (Peer peer : connectedPeers.values()) {
-            try {
-                peer.send(message);
-            } catch (Exception e) {
-                logger.error("Failed to send message to peer: {}", peer.getPeerId(), e);
-            }
-        }
+        connectionManager.unregisterPeer(peer);
     }
 
     public void connectToPeer(String ip, int port) {
@@ -167,7 +81,10 @@ public class NetworkManager {
         }
     }
 
-    public void addKnownPeer(PeerInfo peerInfo) {
-        this.knownPeers.add(peerInfo);
+    // Register protocols in Message Handler
+    private void registerProtocols() {
+        messageHandler.registerProtocol(MessageType.PEER_DISCOVERY_REQUEST, peerDiscoveryProtocol);
+        messageHandler.registerProtocol(MessageType.PEER_DISCOVERY_RESPONSE, peerDiscoveryProtocol);
+        logger.info("Registered all protocol handlers");
     }
 }
