@@ -40,10 +40,10 @@ public class NetworkManager {
     private final ScheduledExecutorService scheduler;
 
 
-    public NetworkManager(Config config, MessageHandler messageHandler, MessageQueue queue) {
+    public NetworkManager(Config config, MessageHandler messageHandler, MessageQueue queue, ExecutorService executor) {
         this.logger = Logger.getLogger(NetworkManager.class);
         this.nodeId = UUID.randomUUID();
-        this.peerExecutor = Executors.newCachedThreadPool();
+        this.peerExecutor = executor;
         this.config = config;
         this.connectionManager = new ConnectionManager(this);
         this.crypto = new Crypto();

@@ -36,7 +36,11 @@ public class ConnectionManager {
     }
 
     public void init() {
-        scheduler.scheduleWithFixedDelay(this::startPeerMaintenance, config.getPeerDiscoveryInitialDelayInSeconds(), config.getPeerDiscoveryDelayInSeconds(), TimeUnit.SECONDS);
+        scheduler.scheduleWithFixedDelay(
+                this::startPeerMaintenance,
+                config.getPeerDiscoveryInitialDelayInSeconds(),
+                config.getPeerDiscoveryDelayInSeconds(),
+                TimeUnit.SECONDS);
     }
 
     public void registerPeer(Peer peer) {
@@ -67,7 +71,7 @@ public class ConnectionManager {
 
         Collections.shuffle(candidates);
 
-        logger.debug("  >                  Connected: {}, Known: {}, Candidates: {}                <  \n", getConnectedPeers().size(), getKnownPeers().size(), candidates.size());
+        logger.debug("   >->   Connected: {}, Known: {}, Candidates: {}   <-<\n", getConnectedPeers().size(), getKnownPeers().size(), candidates.size());
 
         for (PeerInfo info : candidates) {
             if (connectedPeers.size() > config.getMinConnections()) break;
