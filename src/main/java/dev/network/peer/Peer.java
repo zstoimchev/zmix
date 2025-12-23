@@ -4,6 +4,7 @@ import dev.message.Message;
 import dev.message.MessageBuilder;
 import dev.message.enums.MessageType;
 import dev.message.payload.HandshakePayload;
+import dev.network.ConnectionManager;
 import dev.network.Event;
 import dev.network.MessageQueue;
 import dev.network.NetworkManager;
@@ -32,6 +33,7 @@ public class Peer implements Runnable {
     @Getter
     private final int port;
     private final NetworkManager networkManager;
+    private final ConnectionManager connectionManager;
     private final MessageQueue messageQueue;
     private final BufferedReader in;
     private final BufferedWriter out;
@@ -52,6 +54,7 @@ public class Peer implements Runnable {
         this.ip = socket.getLocalAddress().getHostAddress();
         this.port = socket.getPort();
         this.networkManager = networkManager;
+        this.connectionManager = networkManager.getConnectionManager();
         this.messageQueue = queue;
 
         try {
@@ -78,15 +81,20 @@ public class Peer implements Runnable {
             }
 
             networkManager.registerPeer(this);
-            networkManager.getPeerDiscoveryProtocol().requestPeers(this); // TODO: remove reference to PeerDiscoveryProtocol
+
+            if (peerDirection == PeerDirection.OUTBOUND)
+                networkManager.getPeerDiscoveryProtocol().requestPeers(this); // TODO: remove reference to PeerDiscoveryProtocol
+
             this.isRunning.set(true);
-//            networkManager.runPeerDiscovery();
 
             while (this.isRunning.get()) {
                 try {
                     Message message = MessageSerializer.deserialize(in.readLine());
+                    if (message == null) {
+                        disconnect();
+                        break;
+                    }
                     messageQueue.getQueue().add(new Event(this, message));
-                    logger.debug("Queued message from {}", this.peerId);
                 } catch (IOException e) {
                     logger.error("Could not read message from peer: " + e.getMessage(), e);
                     isRunning.set(false);
@@ -135,6 +143,10 @@ public class Peer implements Runnable {
         }
 
         Message message = MessageSerializer.deserialize(rawMessage);
+        if (message == null) {
+            disconnect();
+            return false;
+        }
 
         if (message.getMessageType() != MessageType.HANDSHAKE) {
             logger.warn("Expected {}, got: {}", MessageType.HANDSHAKE, message.getMessageType());
@@ -172,6 +184,7 @@ public class Peer implements Runnable {
 
     public void disconnect() {
         try {
+            isRunning.set(false);
             socket.close();
             networkManager.unregisterPeer(this);
             logger.warn("Closed connection with peer: {}", this.peerId);

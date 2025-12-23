@@ -13,14 +13,12 @@ import java.util.concurrent.ConcurrentHashMap;
 public class CircuitManager {
     private final Logger logger;
     private final NetworkManager networkManager;
-    private final MessageBuilder messageBuilder;
     private final Crypto crypto;
     private final Map<String, Circuit> circuits;
 
     public CircuitManager(NetworkManager networkManager, MessageBuilder messageBuilder, Crypto crypto) {
         this.logger = Logger.getLogger(CircuitManager.class);
         this.networkManager = networkManager;
-        this.messageBuilder = messageBuilder;
         this.crypto = crypto;
         this.circuits = new ConcurrentHashMap<>();
     }
@@ -62,7 +60,7 @@ public class CircuitManager {
     }
 
     private List<Peer> selectRandomPath(int length) {
-        List<Peer> available = new ArrayList<>(networkManager.getConnectedPeers().values());
+        List<Peer> available = new ArrayList<>(networkManager.getConnectionManager().getConnectedPeers().values());
 
         if (available.size() < length) {
             try {
@@ -77,7 +75,7 @@ public class CircuitManager {
     }
 
     private void buildCircuitCreate(String circuitId, Peer firstHop, Peer secondHop) {
-        Message message = messageBuilder.buildCircuitCreateMessageRequest(circuitId, secondHop.getPeerId().toString());
+        Message message = MessageBuilder.buildCircuitCreateMessageRequest(circuitId, secondHop.getPeerId().toString());
         firstHop.send(message);
     }
 

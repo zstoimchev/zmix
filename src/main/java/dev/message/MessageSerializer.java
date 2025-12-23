@@ -57,6 +57,8 @@ public class MessageSerializer {
     }
 
     public static Message deserialize(String rawString) {
+        if (rawString == null || rawString.isEmpty()) return null;
+
         String[] parts = rawString.split(Pattern.quote(delimiter), -1);
 
         MessageType messageType = MessageType.valueOf(parts[0]);
@@ -77,6 +79,8 @@ public class MessageSerializer {
     }
 
     private static MessagePayload deserializePayload(PayloadType payloadType, String rawPayload) {
+        if (rawPayload == null || rawPayload.isEmpty()) return null;
+
         switch (payloadType) {
             case HANDSHAKE -> {
                 return new HandshakePayload(rawPayload);

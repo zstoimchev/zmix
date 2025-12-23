@@ -15,4 +15,9 @@ public class PeerInfo {
         this.host = host;
         this.port = port;
     }
+
+    @Override
+    public String toString() {
+        return "Public Key: " + publicKey;
+    }
 }
