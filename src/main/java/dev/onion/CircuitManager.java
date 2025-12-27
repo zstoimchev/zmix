@@ -1,9 +1,9 @@
 package dev.onion;
 
-import dev.message.Message;
+import dev.models.Message;
 import dev.message.MessageBuilder;
 import dev.network.NetworkManager;
-import dev.network.peer.Peer;
+import dev.network.Peer;
 import dev.utils.Crypto;
 import dev.utils.Logger;
 

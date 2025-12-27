@@ -1,14 +1,11 @@
-package dev.network.peer;
+package dev.network;
 
-import dev.message.Message;
+import dev.models.Message;
 import dev.message.MessageBuilder;
-import dev.message.enums.MessageType;
+import dev.models.enums.MessageType;
 import dev.message.payload.HandshakePayload;
-import dev.network.ConnectionManager;
-import dev.network.Event;
-import dev.network.MessageQueue;
-import dev.network.NetworkManager;
 import dev.message.MessageSerializer;
+import dev.models.enums.PeerDirection;
 import dev.utils.CustomException;
 import dev.utils.Logger;
 import lombok.Getter;

@@ -1,4 +1,4 @@
-package dev.message.enums;
+package dev.models.enums;
 
 public enum PayloadType {
     HANDSHAKE,

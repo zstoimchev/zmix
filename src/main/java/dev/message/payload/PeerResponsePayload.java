@@ -1,6 +1,6 @@
 package dev.message.payload;
 
-import dev.network.peer.PeerInfo;
+import dev.models.PeerInfo;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 

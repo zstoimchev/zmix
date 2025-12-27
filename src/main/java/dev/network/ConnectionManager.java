@@ -1,8 +1,7 @@
 package dev.network;
 
 import dev.message.MessageBuilder;
-import dev.network.peer.Peer;
-import dev.network.peer.PeerInfo;
+import dev.models.PeerInfo;
 import dev.utils.Config;
 import dev.utils.Logger;
 import lombok.Getter;

@@ -1,4 +1,4 @@
-package dev.network.peer;
+package dev.models;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;

@@ -1,11 +1,12 @@
 package dev.message;
 
-import dev.message.enums.MessageType;
-import dev.message.enums.PayloadType;
+import dev.models.enums.MessageType;
+import dev.models.enums.PayloadType;
 import dev.message.payload.HandshakePayload;
 import dev.message.payload.MessagePayload;
 import dev.message.payload.PeerResponsePayload;
-import dev.network.peer.PeerInfo;
+import dev.models.Message;
+import dev.models.PeerInfo;
 import dev.utils.CustomException;
 
 import java.util.List;

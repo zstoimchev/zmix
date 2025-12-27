@@ -1,6 +1,6 @@
 package dev.utils;
 
-import dev.message.Message;
+import dev.models.Message;
 
 import java.nio.charset.StandardCharsets;
 import java.security.*;

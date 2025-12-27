@@ -1,7 +1,6 @@
 package dev.network;
 
-import dev.network.peer.Peer;
-import dev.network.peer.PeerDirection;
+import dev.models.enums.PeerDirection;
 import dev.utils.Config;
 import dev.utils.CustomException;
 import dev.utils.Logger;

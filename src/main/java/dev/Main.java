@@ -15,7 +15,6 @@ public class Main {
     private final Logger logger;
     private final Config config;
     private final Server server;
-    private final ExecutorService executor;
     private final NetworkManager networkManager;
     private final MessageHandler messageHandler;
 
@@ -25,7 +24,7 @@ public class Main {
         this.config = Config.load(args[0]);
         MessageQueue queue = new MessageQueue();
         this.messageHandler = new MessageHandler(queue);
-        this.executor = Executors.newCachedThreadPool();
+        ExecutorService executor = Executors.newCachedThreadPool();
         this.networkManager = new NetworkManager(config, messageHandler, queue, executor);
         this.server = new Server(config, queue, networkManager, executor);
     }

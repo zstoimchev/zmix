@@ -1,8 +1,7 @@
 package dev.network;
 
-import dev.message.enums.MessageType;
-import dev.network.peer.Peer;
-import dev.network.peer.PeerDirection;
+import dev.models.enums.MessageType;
+import dev.models.enums.PeerDirection;
 import dev.protocol.MessageHandler;
 import dev.protocol.PeerDiscoveryProtocol;
 import dev.utils.Config;

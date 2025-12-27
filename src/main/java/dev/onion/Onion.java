@@ -1,6 +1,6 @@
 package dev.onion;
 
-import dev.message.enums.MessageType;
+import dev.models.enums.MessageType;
 
 import java.util.UUID;
 

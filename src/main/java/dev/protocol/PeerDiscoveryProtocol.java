@@ -1,12 +1,12 @@
 package dev.protocol;
 
-import dev.message.Message;
+import dev.models.Message;
 import dev.message.MessageBuilder;
 import dev.message.payload.PeerResponsePayload;
 import dev.network.NetworkManager;
 import dev.network.ConnectionManager;
-import dev.network.peer.Peer;
-import dev.network.peer.PeerInfo;
+import dev.network.Peer;
+import dev.models.PeerInfo;
 import dev.utils.Logger;
 
 import java.util.*;
