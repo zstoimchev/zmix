@@ -2,6 +2,7 @@ package dev.network;
 
 import dev.models.enums.MessageType;
 import dev.models.enums.PeerDirection;
+import dev.protocol.CircuitProtocol;
 import dev.protocol.MessageHandler;
 import dev.protocol.PeerDiscoveryProtocol;
 import dev.utils.Config;
@@ -32,9 +33,11 @@ public class NetworkManager {
     private final MessageQueue queue;
     private final String encodedPublicKey;
 
+    private final CircuitManager circuitManager;
     private final MessageHandler messageHandler;
 
     private final PeerDiscoveryProtocol peerDiscoveryProtocol;
+    private final CircuitProtocol circuitProtocol;
 
     private final ScheduledExecutorService scheduler;
 
@@ -49,8 +52,10 @@ public class NetworkManager {
         this.encodedPublicKey = Base64.getEncoder().encodeToString(crypto.getPublicKey().getEncoded());
         this.queue = queue;
 
+        this.circuitManager = new CircuitManager(this);
         this.messageHandler = messageHandler;
         this.peerDiscoveryProtocol = new PeerDiscoveryProtocol(this);
+        this.circuitProtocol = new CircuitProtocol();
         this.scheduler = Executors.newSingleThreadScheduledExecutor();
         registerProtocols();
     }
@@ -60,6 +65,7 @@ public class NetworkManager {
         isRunning.set(true);
         peerDiscoveryProtocol.init();
         connectionManager.init();
+        circuitManager.init();
     }
 
     public void registerPeer(Peer peer) {
@@ -84,6 +90,8 @@ public class NetworkManager {
     private void registerProtocols() {
         messageHandler.registerProtocol(MessageType.PEER_DISCOVERY_REQUEST, peerDiscoveryProtocol);
         messageHandler.registerProtocol(MessageType.PEER_DISCOVERY_RESPONSE, peerDiscoveryProtocol);
+        messageHandler.registerProtocol(MessageType.CIRCUIT_CREATE_REQUEST, circuitProtocol);
+        messageHandler.registerProtocol(MessageType.CREATE_CIRCUIT_RESPONSE, circuitProtocol);
         logger.info("Registered all protocol handlers");
     }
 }

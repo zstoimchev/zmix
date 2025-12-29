@@ -76,5 +76,7 @@ public class Config {
         return Integer.parseInt(properties.getProperty("connection.maintenance.delay", "60"));
     }
 
+    public int getCircuitLength() { return Integer.parseInt(properties.getProperty("circuit.length", "3")); }
+
     // TODO: method for verifying config values (integers specifically)
 }

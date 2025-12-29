@@ -45,7 +45,7 @@ public class MessageBuilder {
         );
     }
 
-    public static Message buildCircuitCreateMessageRequest(String circuitId, String nextHopPublicKey) {
+    public static Message buildCircuitCreateMessageRequest(UUID circuitId, String nextHopPublicKey) {
         return new Message(
                 MessageType.CIRCUIT_CREATE_REQUEST,
                 null,
