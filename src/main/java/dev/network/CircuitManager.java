@@ -33,7 +33,7 @@ public class CircuitManager {
     }
 
     private List<PeerInfo> selectRandomPath(int length) {
-        List<PeerInfo> available = networkManager.getConnectionManager().getKnownPeers();
+        List<PeerInfo> available = networkManager.getKnownPeers();
         Collections.shuffle(available);
         return available.subList(0, length);
     }

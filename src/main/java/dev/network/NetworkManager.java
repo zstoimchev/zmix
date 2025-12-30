@@ -1,5 +1,7 @@
 package dev.network;
 
+import dev.message.MessageBuilder;
+import dev.models.PeerInfo;
 import dev.models.enums.MessageType;
 import dev.models.enums.PeerDirection;
 import dev.protocol.CircuitProtocol;
@@ -27,11 +29,13 @@ public class NetworkManager {
     private AtomicBoolean isRunning = new AtomicBoolean(false);
     private final ExecutorService peerExecutor;
     private final Config config;
-    private final ConnectionManager connectionManager;
 
     private final Crypto crypto;
     private final MessageQueue queue;
     private final String encodedPublicKey;
+
+    private final ConcurrentHashMap<String, Peer> connectedPeers;
+    private final List<PeerInfo> knownPeers;
 
     private final CircuitManager circuitManager;
     private final MessageHandler messageHandler;
@@ -47,16 +51,18 @@ public class NetworkManager {
         this.nodeId = UUID.randomUUID();
         this.peerExecutor = executor;
         this.config = config;
-        this.connectionManager = new ConnectionManager(this);
         this.crypto = new Crypto();
         this.encodedPublicKey = Base64.getEncoder().encodeToString(crypto.getPublicKey().getEncoded());
         this.queue = queue;
+
+        this.connectedPeers = new ConcurrentHashMap<>();
+        this.knownPeers = new ArrayList<>();
 
         this.circuitManager = new CircuitManager(this);
         this.messageHandler = messageHandler;
         this.peerDiscoveryProtocol = new PeerDiscoveryProtocol(this);
         this.circuitProtocol = new CircuitProtocol();
-        this.scheduler = Executors.newSingleThreadScheduledExecutor();
+        this.scheduler = Executors.newScheduledThreadPool(2);
         registerProtocols();
     }
 
@@ -64,16 +70,54 @@ public class NetworkManager {
         logger.info("Starting network manager");
         isRunning.set(true);
         peerDiscoveryProtocol.init();
-        connectionManager.init();
+        scheduler.scheduleWithFixedDelay(
+                this::startPeerMaintenance,
+                config.getPeerDiscoveryInitialDelayInSeconds(),
+                config.getPeerDiscoveryDelayInSeconds(),
+                TimeUnit.SECONDS);
         circuitManager.init();
     }
 
     public void registerPeer(Peer peer) {
-        connectionManager.registerPeer(peer);
+        if (getKnownPeers().stream().noneMatch(p -> p.getPublicKey().equals(peer.getPublicKeyBase64Encoded())))
+            addKnownPeer(new PeerInfo(peer.getPublicKeyBase64Encoded(), peer.getIp(), peer.getPort()));
+
+        if (getConnectedPeerCount() >= config.getMaxConnections()) {
+            logger.warn("Max peers reached. Cannot register new peer: {}", peer.getPeerId());
+            Collections.shuffle(getKnownPeers());
+            peer.send(MessageBuilder.buildPeerResponseMessage(getKnownPeers().stream().limit(5).toList()));
+            peer.disconnect();
+            return;
+        }
+
+        addConnectedPeer(peer);
+        logger.info("Registered peer: {}", peer.getPeerId());
     }
 
     public void unregisterPeer(Peer peer) {
-        connectionManager.unregisterPeer(peer);
+        removeConnectedPeer(peer);
+        logger.info("Unregistered peer: {}", peer.getPeerId());
+    }
+
+    public void startPeerMaintenance() {
+        if (getConnectedPeerCount() >= config.getMaxConnections()) return;
+
+        List<PeerInfo> candidates = new ArrayList<>(knownPeers
+                .stream()
+                .filter(peer -> !connectedPeers
+                        .containsKey(peer.getPublicKey()) && !peer.getPublicKey()
+                        .equals(encodedPublicKey))
+                .toList());
+
+        Collections.shuffle(candidates);
+
+        logger.debug("   >->   Connected: {}, Known: {}, Candidates: {}   <-<\n", getConnectedPeers().size(), getKnownPeers().size(), candidates.size());
+
+        for (PeerInfo info : candidates) {
+            if (connectedPeers.size() > config.getMinConnections()) break;
+            logger.debug(" ................................., {}, {}", info.host, info.port);
+            connectToPeer(info.host, info.port);
+        }
     }
 
     public void connectToPeer(String ip, int port) {
@@ -84,6 +128,30 @@ public class NetworkManager {
         } catch (IOException e) {
             throw new CustomException("Failed connecting to new peer", e);
         }
+    }
+
+    public synchronized int getConnectedPeerCount() {
+        return connectedPeers.size();
+    }
+
+    public synchronized int getKnownPeerCount() {
+        return knownPeers.size();
+    }
+
+    public synchronized void addConnectedPeer(Peer peer) {
+        connectedPeers.put(peer.getPublicKeyBase64Encoded(), peer);
+    }
+
+    public synchronized void removeConnectedPeer(Peer peer) {
+        connectedPeers.remove(peer.getPublicKeyBase64Encoded());
+    }
+
+    public synchronized void addKnownPeer(PeerInfo peerInfo) {
+        knownPeers.add(peerInfo);
+    }
+
+    public synchronized void removeKnownPeer(PeerInfo peerInfo) {
+        knownPeers.remove(peerInfo);
     }
 
     // Register protocols in Message Handler

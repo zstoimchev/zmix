@@ -30,7 +30,6 @@ public class Peer implements Runnable {
     @Getter
     private final int port;
     private final NetworkManager networkManager;
-    private final ConnectionManager connectionManager;
     private final MessageQueue messageQueue;
     private final BufferedReader in;
     private final BufferedWriter out;
@@ -51,7 +50,6 @@ public class Peer implements Runnable {
         this.ip = socket.getLocalAddress().getHostAddress();
         this.port = socket.getPort();
         this.networkManager = networkManager;
-        this.connectionManager = networkManager.getConnectionManager();
         this.messageQueue = queue;
 
         try {
