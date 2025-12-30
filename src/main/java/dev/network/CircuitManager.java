@@ -63,7 +63,7 @@ public class CircuitManager {
 
 
         this.circuitType = CircuitType.INITIAL;
-        logger.info("Circuit {} built successfully using {} hops", circuitId, length);
+        logger.info("Circuit {} built successfully using {} hops", circuitId, path.size());
     }
 
     private void buildCircuitCreate(Peer firstHop, Peer secondHop) {
