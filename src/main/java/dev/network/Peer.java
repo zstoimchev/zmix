@@ -34,7 +34,6 @@ public class Peer implements Runnable {
     private final BufferedReader in;
     private final BufferedWriter out;
 
-    //    @Getter
     private PublicKey publicKey;
     @Getter
     private String publicKeyBase64Encoded;

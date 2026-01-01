@@ -18,7 +18,7 @@ public class CircuitProtocol implements Protocol {
             case CIRCUIT_CREATE_REQUEST:
                 handleCircuitCreateRequest(peer, message);
                 break;
-            case CREATE_CIRCUIT_RESPONSE:
+            case CIRCUIT_CREATE_RESPONSE:
                 handleCircuitCreateResponse(peer, message);
                 break;
             default:

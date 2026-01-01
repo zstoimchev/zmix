@@ -154,12 +154,13 @@ public class NetworkManager {
         knownPeers.remove(peerInfo);
     }
 
-    // Register protocols in Message Handler
     private void registerProtocols() {
         messageHandler.registerProtocol(MessageType.PEER_DISCOVERY_REQUEST, peerDiscoveryProtocol);
         messageHandler.registerProtocol(MessageType.PEER_DISCOVERY_RESPONSE, peerDiscoveryProtocol);
         messageHandler.registerProtocol(MessageType.CIRCUIT_CREATE_REQUEST, circuitProtocol);
-        messageHandler.registerProtocol(MessageType.CREATE_CIRCUIT_RESPONSE, circuitProtocol);
+        messageHandler.registerProtocol(MessageType.CIRCUIT_CREATE_RESPONSE, circuitProtocol);
+        messageHandler.registerProtocol(MessageType.CIRCUIT_EXTEND_REQUEST, circuitProtocol);
+        messageHandler.registerProtocol(MessageType.CIRCUIT_EXTEND_RESPONSE, circuitProtocol);
         logger.info("Registered all protocol handlers");
     }
 }
