@@ -1,14 +1,16 @@
 package dev.network;
 
+import dev.message.payload.CircuitCreatePayload;
+import dev.message.payload.CircuitExtendPayload;
 import dev.models.Message;
 import dev.message.MessageBuilder;
 import dev.models.PeerInfo;
 import dev.models.enums.CircuitType;
-import dev.models.enums.MessageType;
 import dev.utils.CustomException;
 import dev.utils.Logger;
 
 import java.security.KeyPair;
+import java.security.PublicKey;
 import java.util.*;
 
 public class CircuitManager {
@@ -19,8 +21,10 @@ public class CircuitManager {
     private UUID circuitId;
     private List<PeerInfo> path;
     private Map<Integer, byte[]> keys;
+    private final Map<Integer, KeyPair> pendingKeys;
     private CircuitType circuitType;
     private Peer entryPeer;
+    private int currentHop = 0;
 
 //     private final Map<UUID, Object> circuits;  // all circuits
 
@@ -30,6 +34,7 @@ public class CircuitManager {
         this.circuitLength = networkManager.getConfig().getCircuitLength();
         this.circuitType = null;
         this.keys = new HashMap<>();
+        this.pendingKeys = new HashMap<>();
     }
 
     public void init() {
@@ -38,10 +43,10 @@ public class CircuitManager {
             return;
         }
 
-        logger.info("CircuitManager initialized");
-
         this.circuitId = UUID.randomUUID();
         this.path = selectRandomPath();
+        this.currentHop = 0;
+
         this.createCircuit();
     }
 
@@ -58,25 +63,23 @@ public class CircuitManager {
     }
 
     public void createCircuit() {
-        PeerInfo entryPeer = path.getFirst();
-        this.entryPeer = getOrConnectToPeer(entryPeer);
+        PeerInfo entryPeerInfo = path.getFirst();
+        this.entryPeer = getOrConnectToPeer(entryPeerInfo);
 
         if (this.entryPeer == null) {
             logger.error("Failed to connect to entry node");
             return;
         }
 
-        byte[] entrySessionKey = establishSessionKeyWithEntry();
-        keys.put(0, entrySessionKey);
+        KeyPair eph = networkManager.getCrypto().generateECDHKeyPair();
+        pendingKeys.put(0, eph);
 
-        byte[] middleSessionKey = extendCircuitToHop(1);
-        keys.put(1, middleSessionKey);
+        Message msg = MessageBuilder.buildCircuitCreateMessageRequest(
+                circuitId,
+                Base64.getEncoder().encodeToString(eph.getPublic().getEncoded())
+        );
 
-        byte[] exitSessionKey = extendCircuitToHop(2);
-        keys.put(2, exitSessionKey);
-
-        this.circuitType = CircuitType.INITIAL;
-        logger.info("Circuit {} built successfully using {} hops", circuitId, circuitLength);
+        this.entryPeer.send(msg);
     }
 
     private Peer getOrConnectToPeer(PeerInfo peerInfo) {
@@ -95,100 +98,49 @@ public class CircuitManager {
         return networkManager.getConnectedPeers().get(peerInfo.getPublicKey());
     }
 
+    public void onCircuitCreateResponse(Peer peer, Message message) {
+        CircuitCreatePayload payload = (CircuitCreatePayload) message.getPayload();
 
+        if (!payload.getCircuitId().equals(circuitId)) return;
 
+        KeyPair eph = pendingKeys.remove(0);
+        PublicKey theirPub = networkManager.getCrypto().decodePublicKey(payload.getSecretKey());
 
+        byte[] sharedSecret = networkManager.getCrypto().performECDH(eph.getPrivate(), theirPub);
 
+        byte[] sessionKey = networkManager.getCrypto().deriveAESKey(sharedSecret);
 
+        keys.put(0, sessionKey);
+        currentHop = 1;
 
-
-
-
-
-
-
-
-
-    private byte[] establishSessionKeyWithEntry() {
-        // Generate ephemeral key pair for ECDH
-        KeyPair ephemeralKeyPair = networkManager.getCrypto().generateECDHKeyPair();
-
-        // Send CIRCUIT_CREATE to entry node with our ephemeral public key
-        Message createMsg = MessageBuilder.buildCircuitCreateMessageRequest(
-                circuitId,
-                Base64.getEncoder().encodeToString(ephemeralKeyPair.getPublic().getEncoded())
-        );
-        entryPeer.send(createMsg);
-
-        // TODO: proper async handling
-//        Message response = waitForResponse(MessageType.CIRCUIT_CREATED);
-
-        // Extract entry node's ephemeral public key from response
-        String entryEphemeralKeyBase64 = response.getPayload().getEphemeralPublicKey();
-        PublicKey entryEphemeralPublicKey = decodePublicKey(entryEphemeralKeyBase64);
-
-        // Perform ECDH to get shared secret
-        byte[] sharedSecret = networkManager.getCrypto().performECDH(
-                ephemeralKeyPair.getPrivate(),
-                entryEphemeralPublicKey
-        );
-
-        // Derive AES key from shared secret
-        return networkManager.getCrypto().deriveAESKey(sharedSecret);
+        if (currentHop < circuitLength) {
+            extendToNextHop(currentHop);
+        } else {
+            circuitType = CircuitType.INITIAL;
+            logger.info("Circuit {} established", circuitId);
+        }
     }
 
-    private byte[] extendCircuitToHop(int hopIndex) {
-        PeerInfo nextHop = pathInfo.get(hopIndex);
+    private void extendToNextHop(int hop) {
+        PeerInfo nextHop = path.get(hop);
 
-        // Generate new ephemeral key pair for this hop
-        KeyPair ephemeralKeyPair = networkManager.getCrypto().generateECDHKeyPair();
+        KeyPair eph = networkManager.getCrypto().generateECDHKeyPair();
+        pendingKeys.put(hop, eph);
 
-        // Build extend payload (unencrypted)
-        CircuitExtendPayload extendPayload = new CircuitExtendPayload(
+        CircuitExtendPayload payload = new CircuitExtendPayload(
                 nextHop.getPublicKey(),
                 nextHop.getHost(),
                 nextHop.getPort(),
-                Base64.getEncoder().encodeToString(ephemeralKeyPair.getPublic().getEncoded())
+                Base64.getEncoder().encodeToString(eph.getPublic().getEncoded())
         );
 
-        // Encrypt the extend payload in layers (from innermost to outermost)
-        byte[] encrypted = extendPayload.toBytes();
-
-        // Encrypt with each hop's session key (backwards from target hop to entry)
-        for (int i = hopIndex - 1; i >= 0; i--) {
-            encrypted = networkManager.getCrypto().encryptAES(encrypted, sessionKeys.get(i));
+        byte[] encrypted = payload.toBytes();
+        for (int i = hop - 1; i >= 0; i--) {
+            encrypted = networkManager.getCrypto().encryptAES(encrypted, keys.get(i));
         }
 
-        // Send CIRCUIT_EXTEND through entry node
-        Message extendMsg = MessageBuilder.buildCircuitExtendMessage(circuitId, encrypted);
-        entryPeer.send(extendMsg);
-
-        // Wait for CIRCUIT_EXTENDED response
-        Message response = waitForResponse(MessageType.CIRCUIT_EXTENDED);
-
-        // Decrypt response layers
-        byte[] decrypted = response.getPayload().getEncryptedData();
-        for (int i = 0; i < hopIndex; i++) {
-            decrypted = networkManager.getCrypto().decryptAES(decrypted, sessionKeys.get(i));
-        }
-
-        // Extract ephemeral public key from response
-        String hopEphemeralKeyBase64 = extractEphemeralKey(decrypted);
-        PublicKey hopEphemeralPublicKey = decodePublicKey(hopEphemeralKeyBase64);
-
-        // Perform ECDH
-        byte[] sharedSecret = networkManager.getCrypto().performECDH(
-                ephemeralKeyPair.getPrivate(),
-                hopEphemeralPublicKey
-        );
-
-        return networkManager.getCrypto().deriveAESKey(sharedSecret);
+        Message msg = MessageBuilder.buildCircuitExtendMessage(circuitId, encrypted);
+        entryPeer.send(msg);
     }
-
-    private Message waitForResponse(MessageType expectedType) {
-        // TODO: Implement proper async waiting with timeout
-        throw new UnsupportedOperationException("Async response handling not implemented");
-    }
-
 
 }

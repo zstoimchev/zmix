@@ -1,5 +1,6 @@
 package dev.message;
 
+import dev.message.payload.CircuitCreatePayload;
 import dev.models.enums.MessageType;
 import dev.models.enums.PayloadType;
 import dev.message.payload.HandshakePayload;
@@ -10,6 +11,7 @@ import dev.models.PeerInfo;
 import dev.utils.CustomException;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.regex.Pattern;
 
 public class MessageSerializer {
@@ -26,14 +28,17 @@ public class MessageSerializer {
 
     private static String serializePayload(PayloadType payloadType, MessagePayload payload) {
         switch (payloadType) {
+
             case HANDSHAKE -> {
                 if (!(payload instanceof HandshakePayload hp))
                     throw new CustomException("Expected HandshakePayload", null);
                 return hp.getPublicKeyBase64Encoded();
             }
+
             case PEER_REQUEST -> {
                 return "";
             }
+
             case PEER_RESPONSE -> {
                 if (!(payload instanceof PeerResponsePayload prp)) {
                     throw new CustomException("Expected PeerResponsePayload", null);
@@ -53,6 +58,18 @@ public class MessageSerializer {
                 }
                 return sb.toString();
             }
+
+            case CIRCUIT_CREATE_REQUEST -> {
+                if (!(payload instanceof CircuitCreatePayload ccr)) {
+                    throw new CustomException("Expected CircuitCreatePayload", null);
+                }
+                return ccr.getCircuitId().toString() + "@" + ccr.getSecretKey();
+            }
+
+            case CIRCUIT_CREATE_RESPONSE -> {
+                throw new CustomException("CIRCUIT_CREATE_RESPONSE serialization not implemented", null);
+            }
+
             default -> throw new CustomException("Unexpected value: " + payload, null);
         }
     }
@@ -83,12 +100,15 @@ public class MessageSerializer {
         if (rawPayload == null || rawPayload.isEmpty()) return null;
 
         switch (payloadType) {
+
             case HANDSHAKE -> {
                 return new HandshakePayload(rawPayload);
             }
+
             case PEER_REQUEST -> {
                 return null;
             }
+
             case PEER_RESPONSE -> {
                 String[] peerParts = rawPayload.split("#");
                 int peerCount = Integer.parseInt(peerParts[0]);
@@ -105,6 +125,18 @@ public class MessageSerializer {
                 }
                 return new PeerResponsePayload(peerList);
             }
+
+            case CIRCUIT_CREATE_REQUEST -> {
+                String[] ccrParts = rawPayload.split("@");
+                UUID circuitId = UUID.fromString(ccrParts[0]);
+                String secretKey = ccrParts[1];
+                return new CircuitCreatePayload(circuitId, secretKey);
+            }
+
+            case CIRCUIT_CREATE_RESPONSE -> {
+                throw new CustomException("CIRCUIT_CREATE_RESPONSE deserialization not implemented", null);
+            }
+
             default -> throw new CustomException("Unexpected value: " + payloadType, null);
         }
     }

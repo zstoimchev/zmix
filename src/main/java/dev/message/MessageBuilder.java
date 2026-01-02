@@ -1,5 +1,6 @@
 package dev.message;
 
+import dev.message.payload.CircuitCreatePayload;
 import dev.models.enums.MessageType;
 import dev.models.enums.PayloadType;
 import dev.message.payload.HandshakePayload;
@@ -48,22 +49,22 @@ public class MessageBuilder {
     public static Message buildCircuitCreateMessageRequest(UUID circuitId, String secretKey) {
         return new Message(
                 MessageType.CIRCUIT_CREATE_REQUEST,
-                null,
+                PayloadType.CIRCUIT_CREATE_REQUEST,
                 System.currentTimeMillis(),
                 UUID.randomUUID().toString(),
                 null,
-                null
+                new CircuitCreatePayload(circuitId, secretKey)
         );
     }
 
-    public static Message buildCircuitCreateMessageResponse(String circuitId, String nextHopPublicKey) {
+    public static Message buildCircuitCreateMessageResponse(UUID circuitId, String secretKey) {
         return new Message(
                 MessageType.CIRCUIT_CREATE_RESPONSE,
-                null,
+                PayloadType.CIRCUIT_CREATE_RESPONSE,
                 System.currentTimeMillis(),
                 UUID.randomUUID().toString(),
                 null,
-                null
+                new CircuitCreatePayload(circuitId, secretKey)
         );
     }
 }

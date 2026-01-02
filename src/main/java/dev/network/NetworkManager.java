@@ -37,10 +37,10 @@ public class NetworkManager {
     private final ConcurrentHashMap<String, Peer> connectedPeers;
     private final List<PeerInfo> knownPeers;
 
-    private final CircuitManager circuitManager;
     private final MessageHandler messageHandler;
 
     private final PeerDiscoveryProtocol peerDiscoveryProtocol;
+    private final CircuitManager circuitManager;
     private final CircuitProtocol circuitProtocol;
 
     private final ScheduledExecutorService scheduler;
@@ -58,10 +58,10 @@ public class NetworkManager {
         this.connectedPeers = new ConcurrentHashMap<>();
         this.knownPeers = new ArrayList<>();
 
-        this.circuitManager = new CircuitManager(this);
         this.messageHandler = messageHandler;
         this.peerDiscoveryProtocol = new PeerDiscoveryProtocol(this);
-        this.circuitProtocol = new CircuitProtocol();
+        this.circuitManager = new CircuitManager(this);
+        this.circuitProtocol = new CircuitProtocol(circuitManager, this);
         this.scheduler = Executors.newScheduledThreadPool(2);
         registerProtocols();
     }
