@@ -19,9 +19,9 @@ public class Main {
     private final MessageHandler messageHandler;
 
     // DI and registering all the configuration
-    public Main(String[] args) {
+    public Main(String arg) {
         this.logger = Logger.getLogger(Main.class);
-        this.config = Config.load(args[0]);
+        this.config = Config.load(arg);
         MessageQueue queue = new MessageQueue();
         this.messageHandler = new MessageHandler(queue);
         ExecutorService executor = Executors.newCachedThreadPool();
@@ -30,9 +30,7 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        // TODO: validate args & add a shutdown hook to gracefully stop the network
-        if (args.length < 1) throw new CustomException("Please specify the node configuration!", null);
-        new Main(args).startNetwork();
+        new Main(args.length == 1 ? args[0] : "node.peer.properties").startNetwork();
     }
 
     private void startNetwork() {

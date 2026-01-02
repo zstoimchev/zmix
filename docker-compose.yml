@@ -1,0 +1,4 @@
+services:
+  node:
+    image: onion-node
+    container_name: onion-node
