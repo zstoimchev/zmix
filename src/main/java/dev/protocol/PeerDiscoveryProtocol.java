@@ -1,65 +1,63 @@
 package dev.protocol;
 
-import dev.message.Message;
-import dev.message.payload.PeerRequestPayload;
+import dev.models.Message;
+import dev.message.MessageBuilder;
+import dev.message.payload.PeerResponsePayload;
 import dev.network.NetworkManager;
 import dev.network.Peer;
-import dev.network.PeerInfo;
+import dev.models.PeerInfo;
 import dev.utils.Logger;
 
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class PeerDiscoveryProtocol implements Protocol {
     private final Logger logger;
     private final NetworkManager networkManager;
-    private final Map<String, PeerInfo> knownPeers;
+    private final ScheduledExecutorService scheduler;
 
     public PeerDiscoveryProtocol(NetworkManager networkManager) {
         this.logger = Logger.getLogger(this.getClass());
         this.networkManager = networkManager;
-        this.knownPeers = new HashMap<>();
+        this.scheduler = Executors.newSingleThreadScheduledExecutor();
     }
 
     @Override
     public void digest(Peer peer, Message message) {
-        switch (message.getType()) {
-            case PEER_REQUEST:
-                handlePeerRequest(peer, message);
+        switch (message.getMessageType()) {
+            case PEER_DISCOVERY_REQUEST:
+                handlePeerDiscoveryRequest(peer, message);
                 break;
-            case PEER_RESPONSE:
-                handlePeerResponse(peer, message);
+            case PEER_DISCOVERY_RESPONSE:
+                handlePeerDiscoveryResponse(peer, message);
                 break;
             default:
-                logger.warn("PeerDiscoveryProtocol received unexpected message type: {}", message.getType());
+                logger.warn("PeerDiscoveryProtocol received unexpected message type: {}", message.getMessageType());
         }
     }
 
-    private void handlePeerRequest(Peer peer, Message message) {
+    public void init() {
+        scheduler.scheduleAtFixedRate(
+                this::broadcastPeerRequest,
+                networkManager.getConfig().getConnectionMaintenanceInitialDelayInSeconds(),
+                networkManager.getConfig().getConnectionMaintenanceDelayInSeconds(),
+                TimeUnit.MINUTES);
+    }
+
+    private void handlePeerDiscoveryRequest(Peer peer, Message message) {
         logger.info("Received peer request from: {}", peer.getPeerId());
 
-        List<PeerInfo> peerList = networkManager.getConnectedPeers().values().stream()
-                .filter(p -> !p.getPeerId().equals(peer.getPeerId()))
-                .map(p -> new PeerInfo(
-                        Base64.getEncoder().encodeToString(p.getPublicKey().getEncoded()),
-                        p.getSocket().getLocalAddress().getHostAddress(),   // TODO ? ? ? correct ?
-                        p.getSocket().getLocalPort()                        // TODO ? ? ? correct ?
-                ))
-                .limit(20)
-                .collect(Collectors.toList());
-
-        Message response = networkManager.getMessageBuilder().buildPeerResponseMessage(peerList);
+        List<PeerInfo> peerList = networkManager.getKnownPeers();
+        Message response = MessageBuilder.buildPeerResponseMessage(peerList);
         peer.send(response);
         logger.info("Sent {} peers to: {}", peerList.size(), peer.getPeerId());
     }
 
-    private void handlePeerResponse(Peer peer, Message message) {
+    private void handlePeerDiscoveryResponse(Peer peer, Message message) {
         logger.info("Received peer response from: {}", peer.getPeerId());
-
-        PeerRequestPayload payload = (PeerRequestPayload) message.getPayload();
+        PeerResponsePayload payload = (PeerResponsePayload) message.getPayload();
         if (payload == null || payload.getPeerList() == null) {
             logger.warn("Received empty peer response");
             return;
@@ -72,31 +70,42 @@ public class PeerDiscoveryProtocol implements Protocol {
             Integer port = peerInfo.port;
 
             if (publicKey != null && host != null && port != null) {
-                if (!knownPeers.containsKey(publicKey)) {
-                    knownPeers.put(publicKey, peerInfo);
-                    newPeers++;
-                }
+                PeerInfo newPeerInfo = new PeerInfo(publicKey, host, port);
+                if (isKnown(newPeerInfo) || isSelf(newPeerInfo.getPublicKey())) continue;
+                networkManager.addKnownPeer(newPeerInfo);
+                newPeers++;
             }
         }
 
-        logger.info("Discovered {} new peers (total known: {})", newPeers, knownPeers.size());
-        // TODO: attempt to connect to some of the new peers
-        // or maybe schedule connection attempts later ? ? ?
-        // connectToNewPeers();
+        logger.info("Discovered {} new peers (total known: {})", newPeers, networkManager.getKnownPeers().size());
+    }
+
+    private boolean isKnown(PeerInfo peerInfo) {
+        boolean presentInKnown = networkManager.getKnownPeers().stream().anyMatch(p -> p.getPublicKey().equals(peerInfo.getPublicKey()));
+        boolean presentInConnected = networkManager.getConnectedPeers().values().stream().anyMatch(p -> p.getPublicKeyBase64Encoded().equals(peerInfo.getPublicKey()));
+        return presentInKnown || presentInConnected;
+    }
+
+    private boolean isSelf(String publicKey) {
+        return networkManager.getEncodedPublicKey().equals(publicKey);
     }
 
     public void requestPeers(Peer peer) {
         logger.info("Requesting peers from peer: {}", peer.getPeerId());
-        Message request = networkManager.getMessageBuilder().buildPeerRequestMessage();
+        Message request = MessageBuilder.buildPeerRequestMessage();
         peer.send(request);
     }
 
     public void broadcastPeerRequest() {
-        logger.info("Broadcasting peer request to all connected peers");
-        Message request = networkManager.getMessageBuilder().buildPeerRequestMessage();
+        logger.debug("Broadcasting peer request to all connected peers: {}", networkManager.getConnectedPeers().size());
+        Message message = MessageBuilder.buildPeerRequestMessage();
 
         for (Peer peer : networkManager.getConnectedPeers().values()) {
-            peer.send(request);
+            try {
+                peer.send(message);
+            } catch (Exception e) {
+                logger.error("Failed to send message to peer: {}", peer.getPeerId(), e);
+            }
         }
     }
 }

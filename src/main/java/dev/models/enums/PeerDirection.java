@@ -1,4 +1,4 @@
-package dev.network;
+package dev.models.enums;
 
 public enum PeerDirection {
     INBOUND,

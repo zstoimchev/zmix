@@ -1,9 +1,9 @@
 package dev.protocol;
 
-import dev.message.Event;
-import dev.message.Message;
-import dev.message.MessageQueue;
-import dev.message.MessageType;
+import dev.network.Event;
+import dev.models.Message;
+import dev.network.MessageQueue;
+import dev.models.enums.MessageType;
 import dev.network.Peer;
 import dev.utils.Logger;
 
@@ -38,13 +38,13 @@ public class MessageHandler extends Thread implements Protocol {
 
         while (isRunning.get() && !Thread.currentThread().isInterrupted()) {
             try {
-                Event event = messageQueue.queue.take();
-                if (history.contains(event.message.getMessageId())) {
+                Event event = messageQueue.getQueue().take();
+                if (history.contains(event.message().getMessageId())) {
                     continue;
                 }
 
-                history.add(event.message.getMessageId());
-                digest(event.getSender(), event.getMessage());
+                history.add(event.message().getMessageId());
+                digest(event.sender(), event.message());
             } catch (InterruptedException e) {
                 logger.info("MessageProcessor interrupted");
                 Thread.currentThread().interrupt();
@@ -59,12 +59,12 @@ public class MessageHandler extends Thread implements Protocol {
 
     @Override
     public void digest(Peer peer, Message message) {
-        logger.debug("Processing message type: {} from peer: {}", message.getType(), peer.getPeerId());
+        logger.debug("Processing message type: {} from peer: {}", message.getMessageType(), peer.getPeerId());
 
-        Protocol handler = protocolHandlers.get(message.getType());
+        Protocol handler = protocolHandlers.get(message.getMessageType());
 
         if (handler == null) {
-            logger.warn("No protocol handler registered for message type: {}", message.getType());
+            logger.warn("No protocol handler registered for message type: {}", message.getMessageType());
             peer.disconnect();
             return;
         }
@@ -72,7 +72,7 @@ public class MessageHandler extends Thread implements Protocol {
         try {
             handler.digest(peer, message);
         } catch (Exception e) {
-            logger.error("Error in protocol handler for {}: {}", message.getType(), e.getMessage(), e);
+            logger.error("Error in protocol handler for {}: {}", message.getMessageType(), e.getMessage(), e);
         }
     }
 

@@ -1,6 +1,6 @@
 package dev.network;
 
-import dev.message.MessageQueue;
+import dev.models.enums.PeerDirection;
 import dev.utils.Config;
 import dev.utils.CustomException;
 import dev.utils.Logger;
@@ -10,7 +10,6 @@ import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class Server extends Thread {
     private final Logger logger;
@@ -19,12 +18,12 @@ public class Server extends Thread {
     private final MessageQueue queue;
     private final NetworkManager networkManager;
 
-    public Server(Config config, MessageQueue queue, NetworkManager networkManager) {
+    public Server(Config config, MessageQueue queue, NetworkManager networkManager, ExecutorService peerExecutor) {
         this.setName("Server");
 
         this.logger = Logger.getLogger(this.getClass());
         this.config = config;
-        this.peerExecutor = Executors.newCachedThreadPool();
+        this.peerExecutor = peerExecutor;
         this.queue = queue;
         this.networkManager = networkManager;
     }
@@ -33,17 +32,14 @@ public class Server extends Thread {
     public void run() {
         try (ServerSocket serverSocket = new ServerSocket(config.getNodePort())) {
             logger.info("Server started and waiting for connections on port " + config.getNodePort());
-
             if (!config.isBootstrapNode()) connectToBootstrapNodes();
 
             while (!this.isInterrupted()) {
                 Socket clientSocket = serverSocket.accept();
-                logger.info("---- New connection: ----");
-                logger.info(" -> Local IP:    " + clientSocket.getLocalAddress().getHostAddress());
-                logger.info(" -> Local Port:  " + clientSocket.getLocalPort());
-                logger.info(" -> Remote IP:   " + clientSocket.getInetAddress().getHostAddress());
-                logger.info(" -> Remote Port: " + clientSocket.getPort());
-                logger.info("-------------------------");
+                logger.info("======= New connection: =======");
+                logger.info("  -> Remote IP:   " + clientSocket.getInetAddress().getHostAddress());
+                logger.info("  -> Remote Port: " + clientSocket.getPort());
+                logger.info("===============================");
                 peerExecutor.submit(new Peer(clientSocket, queue, networkManager, PeerDirection.INBOUND));
             }
         } catch (BindException e) {

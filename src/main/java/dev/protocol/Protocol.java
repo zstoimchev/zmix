@@ -1,6 +1,6 @@
 package dev.protocol;
 
-import dev.message.Message;
+import dev.models.Message;
 import dev.network.Peer;
 
 public interface Protocol {

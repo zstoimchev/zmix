@@ -1,4 +1,3 @@
 package dev.message.payload;
 
-public abstract class MessagePayload {
-}
+public abstract class MessagePayload {}

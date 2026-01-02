@@ -1,10 +1,11 @@
 package dev.network;
 
-import dev.message.Event;
-import dev.message.Message;
-import dev.message.MessageQueue;
-import dev.message.MessageType;
-import dev.utils.MessageSerializer;
+import dev.models.Message;
+import dev.message.MessageBuilder;
+import dev.models.enums.MessageType;
+import dev.message.payload.HandshakePayload;
+import dev.message.MessageSerializer;
+import dev.models.enums.PeerDirection;
 import dev.utils.CustomException;
 import dev.utils.Logger;
 import lombok.Getter;
@@ -21,26 +22,34 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class Peer implements Runnable {
     private final Logger logger;
     @Getter
+    private final UUID peerId;
     private final Socket socket;
-    private final AtomicBoolean isRunning = new AtomicBoolean(false);
+    private final PeerDirection peerDirection;
+    @Getter
+    private final String ip;
+    @Getter
+    private final int port;
+    private final NetworkManager networkManager;
+    private final MessageQueue messageQueue;
     private final BufferedReader in;
     private final BufferedWriter out;
-    private final NetworkManager networkManager;
-    private final PeerDirection peerDirection;
-    private final MessageQueue messageQueue;
-    @Getter
-    private final UUID peerId;
-    @Getter
+
     private PublicKey publicKey;
+    @Getter
+    private String publicKeyBase64Encoded;
+
+    private final AtomicBoolean isRunning = new AtomicBoolean(false);
 
 
     public Peer(Socket socket, MessageQueue queue, NetworkManager networkManager, PeerDirection peerDirection) {
         this.logger = Logger.getLogger(Peer.class);
-        this.socket = socket;
-        this.messageQueue = queue;
-        this.networkManager = networkManager;
-        this.peerDirection = peerDirection;
         this.peerId = UUID.randomUUID();
+        this.socket = socket;
+        this.peerDirection = peerDirection;
+        this.ip = socket.getLocalAddress().getHostAddress();
+        this.port = socket.getPort();
+        this.networkManager = networkManager;
+        this.messageQueue = queue;
 
         try {
             this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -66,14 +75,20 @@ public class Peer implements Runnable {
             }
 
             networkManager.registerPeer(this);
-            networkManager.getPeerDiscoveryProtocol().requestPeers(this);
+
+            if (peerDirection == PeerDirection.OUTBOUND)
+                networkManager.getPeerDiscoveryProtocol().requestPeers(this); // TODO: remove reference to PeerDiscoveryProtocol
+
             this.isRunning.set(true);
 
             while (this.isRunning.get()) {
                 try {
                     Message message = MessageSerializer.deserialize(in.readLine());
-                    messageQueue.queue.add(new Event(this, message));
-                    logger.debug("Queued message from {}", this.peerId);
+                    if (message == null) {
+                        disconnect();
+                        break;
+                    }
+                    messageQueue.getQueue().add(new Event(this, message));
                 } catch (IOException e) {
                     logger.error("Could not read message from peer: " + e.getMessage(), e);
                     isRunning.set(false);
@@ -107,7 +122,7 @@ public class Peer implements Runnable {
     }
 
     private void sendHandshake() {
-        Message handshakeMessage = networkManager.getMessageBuilder().buildHandshakeMessage();
+        Message handshakeMessage = MessageBuilder.buildHandshakeMessage(networkManager.getEncodedPublicKey());
         this.send(handshakeMessage);
         logger.info("Sent handshake to {}", socket.getRemoteSocketAddress());
     }
@@ -122,13 +137,21 @@ public class Peer implements Runnable {
         }
 
         Message message = MessageSerializer.deserialize(rawMessage);
-
-        if (message.getType() != MessageType.HANDSHAKE) {
-            logger.warn("Expected {}, got: {}", MessageType.HANDSHAKE, message.getType());
+        if (message == null) {
+            disconnect();
             return false;
         }
 
-        byte[] publicKeyBytes = Base64.getDecoder().decode(message.getSenderPublicKey());
+        if (message.getMessageType() != MessageType.HANDSHAKE) {
+            logger.warn("Expected {}, got: {}", MessageType.HANDSHAKE, message.getMessageType());
+            return false;
+        }
+
+        if (!(message.getPayload() instanceof HandshakePayload handshakePayload)) return false;
+
+        // TODO: PEER CLASS SHOULD NOT DECODE THE PUBLIC KEY, MOVE THIS SOMEWHERE ELSE
+        publicKeyBase64Encoded = handshakePayload.getPublicKeyBase64Encoded();
+        byte[] publicKeyBytes = Base64.getDecoder().decode(publicKeyBase64Encoded);
         X509EncodedKeySpec keySpec = new X509EncodedKeySpec(publicKeyBytes);
         KeyFactory keyFactory = KeyFactory.getInstance("EC"); // TODO: Use config for algorithm
         this.publicKey = keyFactory.generatePublic(keySpec);
@@ -155,6 +178,7 @@ public class Peer implements Runnable {
 
     public void disconnect() {
         try {
+            isRunning.set(false);
             socket.close();
             networkManager.unregisterPeer(this);
             logger.warn("Closed connection with peer: {}", this.peerId);

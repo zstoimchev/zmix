@@ -1,6 +1,6 @@
 package dev;
 
-import dev.message.MessageQueue;
+import dev.network.MessageQueue;
 import dev.network.NetworkManager;
 import dev.network.Server;
 import dev.protocol.MessageHandler;
@@ -8,19 +8,25 @@ import dev.utils.Config;
 import dev.utils.CustomException;
 import dev.utils.Logger;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 public class Main {
     private final Logger logger;
     private final Config config;
     private final Server server;
+    private final NetworkManager networkManager;
+    private final MessageHandler messageHandler;
 
     // DI and registering all the configuration
     public Main(String[] args) {
         this.logger = Logger.getLogger(Main.class);
         this.config = Config.load(args[0]);
         MessageQueue queue = new MessageQueue();
-        MessageHandler messageHandler = new MessageHandler(queue);
-        NetworkManager networkManager = new NetworkManager(config, messageHandler);
-        this.server = new Server(config, queue, networkManager);
+        this.messageHandler = new MessageHandler(queue);
+        ExecutorService executor = Executors.newCachedThreadPool();
+        this.networkManager = new NetworkManager(config, messageHandler, queue, executor);
+        this.server = new Server(config, queue, networkManager, executor);
     }
 
     public static void main(String[] args) {
@@ -32,5 +38,7 @@ public class Main {
     private void startNetwork() {
         logger.info("Starting network on port: {}...", config.getNodePort());
         this.server.start();
+        this.messageHandler.start();
+        this.networkManager.start();
     }
 }
