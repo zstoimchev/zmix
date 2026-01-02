@@ -63,7 +63,7 @@ public class MessageSerializer {
                 if (!(payload instanceof CircuitCreatePayload ccr)) {
                     throw new CustomException("Expected CircuitCreatePayload", null);
                 }
-                return ccr.getCircuitId().toString() + "@" + ccr.getSecretKey();
+                return ccr.getCircuitId().toString() + "@" + ccr.getEphemeralKey();
             }
 
             case CIRCUIT_CREATE_RESPONSE -> {

@@ -75,7 +75,7 @@ public class NetworkManager {
                 config.getPeerDiscoveryInitialDelayInSeconds(),
                 config.getPeerDiscoveryDelayInSeconds(),
                 TimeUnit.SECONDS);
-        circuitManager.init();
+//        circuitManager.init();
     }
 
     public void registerPeer(Peer peer) {

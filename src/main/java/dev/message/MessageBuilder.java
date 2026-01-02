@@ -1,10 +1,8 @@
 package dev.message;
 
-import dev.message.payload.CircuitCreatePayload;
+import dev.message.payload.*;
 import dev.models.enums.MessageType;
 import dev.models.enums.PayloadType;
-import dev.message.payload.HandshakePayload;
-import dev.message.payload.PeerResponsePayload;
 import dev.models.Message;
 import dev.models.PeerInfo;
 
@@ -65,6 +63,28 @@ public class MessageBuilder {
                 UUID.randomUUID().toString(),
                 null,
                 new CircuitCreatePayload(circuitId, secretKey)
+        );
+    }
+
+    public static Message buildCircuitExtendMessageRequest(UUID circuitId, byte[] data) {
+        return new Message(
+                MessageType.CIRCUIT_EXTEND_REQUEST,
+                PayloadType.CIRCUIT_EXTEND_REQUEST,
+                System.currentTimeMillis(),
+                UUID.randomUUID().toString(),
+                null,
+                new CircuitExtendEncryptedPayload(circuitId, data)
+        );
+    }
+
+    public static Message buildCircuitExtendMessageResponse(UUID circuitId, byte[] data) {
+        return new Message(
+                MessageType.CIRCUIT_EXTEND_RESPONSE,
+                PayloadType.CIRCUIT_EXTEND_RESPONSE,
+                System.currentTimeMillis(),
+                UUID.randomUUID().toString(),
+                null,
+                new CircuitExtendEncryptedPayload(circuitId, data)
         );
     }
 }
