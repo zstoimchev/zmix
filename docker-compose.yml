@@ -1,4 +1,45 @@
 services:
-  node:
-    image: onion-node
-    container_name: onion-node
+  bootstrap-node:
+    build: .
+    container_name: bootstrap-node
+    environment:
+      - NODE_BOOTSTRAP=true
+      - NODE_PORT=12137
+    ports:
+      - "12137:12137"
+    networks:
+      - onion-network
+
+  peer1:
+    build: .
+    container_name: peer1
+    environment:
+      - BOOTSTRAP_HOST=bootstrap-node
+    depends_on:
+      - bootstrap-node
+    networks:
+      - onion-network
+
+  peer2:
+    build: .
+    container_name: peer2
+    environment:
+      - BOOTSTRAP_HOST=bootstrap-node
+    depends_on:
+      - bootstrap-node
+    networks:
+      - onion-network
+
+  peer3:
+    build: .
+    container_name: peer3
+    environment:
+      - BOOTSTRAP_HOST=bootstrap-node
+    depends_on:
+      - bootstrap-node
+    networks:
+      - onion-network
+
+networks:
+  onion-network:
+    driver: bridge
