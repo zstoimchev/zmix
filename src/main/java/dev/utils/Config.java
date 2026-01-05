@@ -32,10 +32,6 @@ public class Config {
         return new Config(properties);
     }
 
-    public String getNodeHost() {
-        return properties.getProperty("node.host", "localhost");
-    }
-
     public int getNodePort() {
         return Integer.parseInt(properties.getProperty("node.port", "12137"));
     }
