@@ -33,11 +33,13 @@ public class Config {
     }
 
     public int getNodePort() {
-        return Integer.parseInt(properties.getProperty("node.port", "12137"));
+        String envPort = System.getenv("NODE_PORT");
+        return envPort != null ? Integer.parseInt(envPort) : Integer.parseInt(properties.getProperty("node.port", "12137"));
     }
 
     public boolean isBootstrapNode() {
-        return Boolean.parseBoolean(properties.getProperty("node.bootstrap", "true"));
+        String envBootstrap = System.getenv("NODE_BOOTSTRAP");
+        return envBootstrap != null ? Boolean.parseBoolean(envBootstrap) : Boolean.parseBoolean(properties.getProperty("node.bootstrap", "false"));
     }
 
     public int getMaxConnections() {
@@ -49,7 +51,8 @@ public class Config {
     }
 
     public String getBootstrapNodeHost() {
-        return properties.getProperty("bootstrap.host", "localhost");
+        String envBootstrapHost = System.getenv("BOOTSTRAP_HOST");
+        return envBootstrapHost != null ? envBootstrapHost : properties.getProperty("bootstrap.host", "localhost");
     }
 
     public int getBootstrapNodePort() {
@@ -72,7 +75,9 @@ public class Config {
         return Integer.parseInt(properties.getProperty("connection.maintenance.delay", "60"));
     }
 
-    public int getCircuitLength() { return Integer.parseInt(properties.getProperty("circuit.length", "3")); }
+    public int getCircuitLength() {
+        return Integer.parseInt(properties.getProperty("circuit.length", "3"));
+    }
 
     // TODO: method for verifying config values (integers specifically)
 }
