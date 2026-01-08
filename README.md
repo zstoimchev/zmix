@@ -28,3 +28,4 @@ You can reach me at: [zstoimchev@outlook.com](mailto:zstoimchev@outlook.com)
 
 This is built by me and myself only. So...
 
+to run the image: `docker-compose up --build` 
