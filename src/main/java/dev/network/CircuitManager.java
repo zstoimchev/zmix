@@ -17,10 +17,13 @@ import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.PublicKey;
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 public class CircuitManager {
     private final Logger logger;
     private final NetworkManager networkManager;
+    private final ScheduledExecutorService circuitExecutor;
     private final Crypto crypto;
     private final int circuitLength;
 
@@ -38,6 +41,7 @@ public class CircuitManager {
     public CircuitManager(NetworkManager networkManager) {
         this.logger = Logger.getLogger(CircuitManager.class);
         this.networkManager = networkManager;
+        this.circuitExecutor = Executors.newSingleThreadScheduledExecutor();
         this.crypto = networkManager.getCrypto();
         this.circuitLength = networkManager.getConfig().getCircuitLength();
         this.circuitType = null;
@@ -56,7 +60,7 @@ public class CircuitManager {
         this.path = selectRandomPath();
         this.currentHop = 0;
 
-        this.createCircuit();
+        circuitExecutor.submit(this::createCircuit);
     }
 
     private List<PeerInfo> selectRandomPath() {
@@ -90,18 +94,25 @@ public class CircuitManager {
 
     private Peer getOrConnectToPeer(PeerInfo peerInfo) {
         Peer existing = networkManager.getConnectedPeers().get(peerInfo.getPublicKey());
-
         if (existing != null) return existing;
 
         networkManager.connectToPeer(peerInfo.getHost(), peerInfo.getPort());
 
-        try {
-            Thread.sleep(3 * 1000); // TODO: callback webhook ? ? ?
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+        int attempts = 0;
+        while (attempts < 30) {
+            try {
+                Thread.sleep(100);
+                Peer peer = networkManager.getConnectedPeers().get(peerInfo.getPublicKey());
+                if (peer != null) return peer;
+                attempts++;
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return null;
+            }
         }
 
-        return networkManager.getConnectedPeers().get(peerInfo.getPublicKey());
+        return null; // Timeout connecting to peer
+        // TODO: handle timeout properly in the parent method
     }
 
 
