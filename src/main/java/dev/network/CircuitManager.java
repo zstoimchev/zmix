@@ -275,6 +275,15 @@ public class CircuitManager {
         logger.info("Forwarded CIRCUIT_EXTENDED to previous hop");
     }
 
+    public boolean isCircuitReady() {
+        return circuitType == CircuitType.INITIAL && currentHop == circuitLength;
+    }
+
+    public void sendRequest(String input) {
+//        construct get request, encrypt it using session keys, send it to entry peer
+        return;
+    }
+
     @AllArgsConstructor
     private static class RelayCircuit {
         UUID circuitId;
