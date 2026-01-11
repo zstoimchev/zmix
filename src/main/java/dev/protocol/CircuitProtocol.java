@@ -24,7 +24,7 @@ public class CircuitProtocol implements Protocol {
 
             case CIRCUIT_CREATE_RESPONSE:
                 CircuitCreatePayload createPayload = (CircuitCreatePayload) message.getPayload();
-                if (circuitManager.getCircuitId() == createPayload.getCircuitId()) {
+                if (circuitManager.getMyCircuitId() == createPayload.getCircuitId()) {
                     circuitManager.onCircuitCreateResponse(peer, message);
                 } else {
                     circuitManager.onCircuitExtendResponseAsRelay(peer, message);

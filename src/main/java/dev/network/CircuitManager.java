@@ -28,7 +28,7 @@ public class CircuitManager {
     private final int circuitLength;
 
     @Getter
-    private UUID circuitId;
+    private UUID myCircuitId;
     private List<PeerInfo> path;
     private Map<Integer, byte[]> keys;
     private final Map<Integer, KeyPair> pendingKeys;
@@ -56,7 +56,7 @@ public class CircuitManager {
             return;
         }
 
-        this.circuitId = UUID.randomUUID();
+        this.myCircuitId = UUID.randomUUID();
         this.path = selectRandomPath();
         this.currentHop = 0;
 
@@ -87,7 +87,7 @@ public class CircuitManager {
         KeyPair eph = crypto.generateECDHKeyPair();
         pendingKeys.put(0, eph);
 
-        Message msg = MessageBuilder.buildCircuitCreateMessageRequest(circuitId, Base64.getEncoder().encodeToString(eph.getPublic().getEncoded()));
+        Message msg = MessageBuilder.buildCircuitCreateMessageRequest(myCircuitId, Base64.getEncoder().encodeToString(eph.getPublic().getEncoded()));
 
         this.entryPeer.send(msg);
     }
@@ -141,8 +141,8 @@ public class CircuitManager {
         logger.info("Received CIRCUIT_CREATED response");
         CircuitCreatePayload payload = (CircuitCreatePayload) message.getPayload();
 
-        if (!payload.getCircuitId().equals(circuitId)) {
-            logger.warn("Received response for different circuit. Expected: {}, Got: {}", circuitId, payload.getCircuitId());
+        if (!payload.getCircuitId().equals(myCircuitId)) {
+            logger.warn("Received response for different circuit. Expected: {}, Got: {}", myCircuitId, payload.getCircuitId());
             return;
         }
 
@@ -160,7 +160,7 @@ public class CircuitManager {
             extendToNextHop(currentHop);
         } else {
             circuitType = CircuitType.INITIAL;
-            logger.info("Circuit {} fully established with {} hops!", circuitId, circuitLength);
+            logger.info("Circuit {} fully established with {} hops!", myCircuitId, circuitLength);
         }
     }
 
@@ -182,7 +182,7 @@ public class CircuitManager {
             encrypted = crypto.encryptAES(encrypted, keys.get(i));
         }
 
-        Message msg = MessageBuilder.buildCircuitExtendMessageRequest(circuitId, encrypted);
+        Message msg = MessageBuilder.buildCircuitExtendMessageRequest(myCircuitId, encrypted);
         entryPeer.send(msg);
         logger.info("Sent CIRCUIT_EXTEND for hop {}", hop);
     }
@@ -250,7 +250,7 @@ public class CircuitManager {
             extendToNextHop(currentHop);
         } else {
             circuitType = CircuitType.INITIAL;
-            logger.info("Circuit {} fully established with {} hops!", circuitId, circuitLength);
+            logger.info("Circuit {} fully established with {} hops!", myCircuitId, circuitLength);
         }
     }
 
