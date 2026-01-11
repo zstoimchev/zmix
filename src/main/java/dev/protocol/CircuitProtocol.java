@@ -3,20 +3,16 @@ package dev.protocol;
 import dev.message.payload.CircuitCreatePayload;
 import dev.models.Message;
 import dev.network.CircuitManager;
-import dev.network.NetworkManager;
 import dev.network.Peer;
-import dev.utils.Crypto;
 import dev.utils.Logger;
 
 public class CircuitProtocol implements Protocol {
     private final Logger logger;
     private final CircuitManager circuitManager;
-    private final Crypto crypto;
 
-    public CircuitProtocol(CircuitManager circuitManager, NetworkManager networkManager) {
+    public CircuitProtocol(CircuitManager circuitManager) {
         this.logger = Logger.getLogger(this.getClass());
         this.circuitManager = circuitManager;
-        this.crypto = networkManager.getCrypto();
     }
 
     @Override
@@ -28,7 +24,7 @@ public class CircuitProtocol implements Protocol {
 
             case CIRCUIT_CREATE_RESPONSE:
                 CircuitCreatePayload createPayload = (CircuitCreatePayload) message.getPayload();
-                if (circuitManager.getCircuitId() ==createPayload.getCircuitId()) {
+                if (circuitManager.getMyCircuitId() == createPayload.getCircuitId()) {
                     circuitManager.onCircuitCreateResponse(peer, message);
                 } else {
                     circuitManager.onCircuitExtendResponseAsRelay(peer, message);

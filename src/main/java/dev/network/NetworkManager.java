@@ -61,7 +61,7 @@ public class NetworkManager {
         this.messageHandler = messageHandler;
         this.peerDiscoveryProtocol = new PeerDiscoveryProtocol(this);
         this.circuitManager = new CircuitManager(this);
-        this.circuitProtocol = new CircuitProtocol(circuitManager, this);
+        this.circuitProtocol = new CircuitProtocol(circuitManager);
         this.scheduler = Executors.newScheduledThreadPool(2);
         registerProtocols();
     }
