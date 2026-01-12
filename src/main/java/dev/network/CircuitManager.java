@@ -51,11 +51,18 @@ public class CircuitManager {
     }
 
     public void init() {
+        logger.info("Initializing Circuit Manager. There are {} peers connected.", networkManager.getKnownPeers().size());
         if (networkManager.getKnownPeers().size() < circuitLength) {
             logger.warn("Not enough connected peers to build circuit");
             return;
         }
 
+        if (this.circuitType == CircuitType.PENDING) {
+            logger.warn("Circuit is already being prepared. Wait a bit...");
+            return;
+        }
+
+        this.circuitType = CircuitType.PENDING;
         this.myCircuitId = UUID.randomUUID();
         this.path = selectRandomPath();
         this.currentHop = 0;
