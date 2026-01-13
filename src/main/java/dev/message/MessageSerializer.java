@@ -1,11 +1,8 @@
 package dev.message;
 
-import dev.message.payload.CircuitCreatePayload;
+import dev.message.payload.*;
 import dev.models.enums.MessageType;
 import dev.models.enums.PayloadType;
-import dev.message.payload.HandshakePayload;
-import dev.message.payload.MessagePayload;
-import dev.message.payload.PeerResponsePayload;
 import dev.models.Message;
 import dev.models.PeerInfo;
 import dev.utils.CustomException;
@@ -59,15 +56,19 @@ public class MessageSerializer {
                 return sb.toString();
             }
 
-            case CIRCUIT_CREATE_REQUEST -> {
+            case CIRCUIT_CREATE_REQUEST, CIRCUIT_CREATE_RESPONSE -> {
                 if (!(payload instanceof CircuitCreatePayload ccr)) {
                     throw new CustomException("Expected CircuitCreatePayload", null);
                 }
                 return ccr.getCircuitId().toString() + "@" + ccr.getEphemeralKey();
             }
 
-            case CIRCUIT_CREATE_RESPONSE -> {
-                throw new CustomException("CIRCUIT_CREATE_RESPONSE serialization not implemented", null);
+            case CIRCUIT_EXTEND_RESPONSE -> {
+                if (!(payload instanceof CircuitExtendEncryptedPayload cer)) {
+                    throw new CustomException("Expected CircuitExtendEncryptedPayload", null);
+                }
+                String base64Data = java.util.Base64.getEncoder().encodeToString(cer.getEncryptedData());
+                return cer.getCircuitId().toString() + "@" + base64Data;
             }
 
             default -> throw new CustomException("Unexpected value: " + payload, null);
@@ -126,15 +127,18 @@ public class MessageSerializer {
                 return new PeerResponsePayload(peerList);
             }
 
-            case CIRCUIT_CREATE_REQUEST -> {
+            case CIRCUIT_CREATE_REQUEST, CIRCUIT_CREATE_RESPONSE -> {
                 String[] ccrParts = rawPayload.split("@");
                 UUID circuitId = UUID.fromString(ccrParts[0]);
                 String secretKey = ccrParts[1];
                 return new CircuitCreatePayload(circuitId, secretKey);
             }
 
-            case CIRCUIT_CREATE_RESPONSE -> {
-                throw new CustomException("CIRCUIT_CREATE_RESPONSE deserialization not implemented", null);
+            case CIRCUIT_EXTEND_RESPONSE -> {
+                String[] parts = rawPayload.split("@", 2);
+                UUID circuitId = UUID.fromString(parts[0]);
+                byte[] encryptedData = java.util.Base64.getDecoder().decode(parts[1]);
+                return new CircuitExtendEncryptedPayload(circuitId, encryptedData);
             }
 
             default -> throw new CustomException("Unexpected value: " + payloadType, null);

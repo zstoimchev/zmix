@@ -1,5 +1,6 @@
 package dev.network;
 
+import dev.models.Event;
 import dev.models.Message;
 import dev.message.MessageBuilder;
 import dev.models.enums.MessageType;
@@ -89,6 +90,7 @@ public class Peer implements Runnable {
                         break;
                     }
                     messageQueue.getQueue().add(new Event(this, message));
+                    logger.info("Received message of type {} from peer {}", message.getMessageType(), this.peerId);
                 } catch (IOException e) {
                     logger.error("Could not read message from peer: " + e.getMessage(), e);
                     isRunning.set(false);
@@ -170,6 +172,7 @@ public class Peer implements Runnable {
             synchronized (out) {
                 out.write(MessageSerializer.serialize(message) + "\n");
                 out.flush();
+                logger.info("Sent message of type {} to peer {}", message.getMessageType(), this.peerId);
             }
         } catch (IOException e) {
             logger.error("Could not send message to peer..." + e.getMessage());

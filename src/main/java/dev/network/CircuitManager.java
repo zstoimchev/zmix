@@ -123,12 +123,7 @@ public class CircuitManager {
     }
 
 
-    public void onCircuitCreateRequest(Peer peer, Message message) {
-        logger.info("Received CIRCUIT_CREATE_REQUEST from peer: {}", peer.getPeerId());
-
-        CircuitCreatePayload payload = (CircuitCreatePayload) message.getPayload();
-        UUID circuitId = payload.getCircuitId();
-
+    public void onCircuitCreateRequest(Peer peer, UUID circuitId, CircuitCreatePayload payload) {
         KeyPair ephemeralKeyPair = crypto.generateECDHKeyPair();
         PublicKey theirEphemeralPublicKey = crypto.decodePublicKey(payload.getEphemeralKey());
 
@@ -140,19 +135,9 @@ public class CircuitManager {
         String ourEphemeralKeyBase64 = Base64.getEncoder().encodeToString(ephemeralKeyPair.getPublic().getEncoded());
         Message response = MessageBuilder.buildCircuitCreateMessageResponse(circuitId, ourEphemeralKeyBase64);
         peer.send(response);
-
-        logger.info("Sent CIRCUIT_CREATED for circuit: {}", circuitId);
     }
 
-    public void onCircuitCreateResponse(Peer peer, Message message) {
-        logger.info("Received CIRCUIT_CREATED response");
-        CircuitCreatePayload payload = (CircuitCreatePayload) message.getPayload();
-
-        if (!payload.getCircuitId().equals(myCircuitId)) {
-            logger.warn("Received response for different circuit. Expected: {}, Got: {}", myCircuitId, payload.getCircuitId());
-            return;
-        }
-
+    public void onCircuitCreateResponse(Peer peer, UUID circuitId, CircuitCreatePayload payload) {
         KeyPair eph = pendingKeys.remove(0);
         PublicKey theirPub = crypto.decodePublicKey(payload.getEphemeralKey());
 
@@ -169,6 +154,12 @@ public class CircuitManager {
             circuitType = CircuitType.INITIAL;
             logger.info("Circuit {} fully established with {} hops!", myCircuitId, circuitLength);
         }
+    }
+
+    public void onCircuitCreatedResponseExtended(Peer peer, UUID circuitId, CircuitCreatePayload payload) {
+        // so, here we received circuit created, but it is not for our circuit
+        // meaning, we need to encrypt the payload together with the circuitId,
+        // and send to the previous peer in the format of circuitExtendedMessage
     }
 
     private void extendToNextHop(int hop) {

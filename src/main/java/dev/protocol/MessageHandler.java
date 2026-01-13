@@ -1,6 +1,6 @@
 package dev.protocol;
 
-import dev.network.Event;
+import dev.models.Event;
 import dev.models.Message;
 import dev.network.MessageQueue;
 import dev.models.enums.MessageType;
