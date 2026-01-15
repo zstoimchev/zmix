@@ -10,12 +10,12 @@ import java.util.UUID;
 
 public class MessageBuilder {
 
-    public static Message buildHandshakeMessage(String senderPublicKeyEncoded) {
+    public static Message buildHandshakeMessage(String senderPublicKeyEncoded, int port) {
         return new Message(
                 MessageType.HANDSHAKE,
                 System.currentTimeMillis(),
                 UUID.randomUUID().toString(),
-                new HandshakePayload(senderPublicKeyEncoded)
+                new HandshakePayload(senderPublicKeyEncoded, port)
         );
     }
 

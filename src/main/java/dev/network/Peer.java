@@ -29,7 +29,7 @@ public class Peer implements Runnable {
     @Getter
     private final String ip;
     @Getter
-    private final int port;
+    private int port;
     private final NetworkManager networkManager;
     private final MessageQueue messageQueue;
     private final BufferedReader in;
@@ -48,7 +48,6 @@ public class Peer implements Runnable {
         this.socket = socket;
         this.peerDirection = peerDirection;
         this.ip = socket.getLocalAddress().getHostAddress();
-        this.port = socket.getPort();
         this.networkManager = networkManager;
         this.messageQueue = queue;
 
@@ -123,9 +122,9 @@ public class Peer implements Runnable {
     }
 
     private void sendHandshake() {
-        Message handshakeMessage = MessageBuilder.buildHandshakeMessage(networkManager.getEncodedPublicKey());
+        Message handshakeMessage = MessageBuilder.buildHandshakeMessage(networkManager.getEncodedPublicKey(), networkManager.getPort());
         this.send(handshakeMessage);
-        logger.info("Sent handshake to {}", socket.getRemoteSocketAddress());
+        logger.info("Sent handshake to {}:{}", getIp(), getPort());
     }
 
     private boolean waitForHandshakeResponse() throws Exception {
@@ -156,6 +155,7 @@ public class Peer implements Runnable {
         X509EncodedKeySpec keySpec = new X509EncodedKeySpec(publicKeyBytes);
         KeyFactory keyFactory = KeyFactory.getInstance("EC"); // TODO: Use config for algorithm
         this.publicKey = keyFactory.generatePublic(keySpec);
+        this.port = handshakePayload.getPort();
 
         socket.setSoTimeout(0);
         logger.info("Received handshake from {}", this.peerId);
