@@ -5,6 +5,7 @@ import dev.models.enums.MessageType;
 import dev.models.Message;
 import dev.models.PeerInfo;
 import dev.utils.CustomException;
+import dev.utils.Logger;
 
 import java.util.List;
 import java.util.UUID;
@@ -26,7 +27,7 @@ public class MessageSerializer {
             case HANDSHAKE -> {
                 if (!(payload instanceof HandshakePayload hp))
                     throw new CustomException("Expected HandshakePayload", null);
-                return hp.getPublicKeyBase64Encoded();
+                return hp.getPublicKeyBase64Encoded() + ":" + hp.getPort();
             }
 
             case PEER_DISCOVERY_REQUEST -> {
@@ -96,7 +97,8 @@ public class MessageSerializer {
         switch (messageType) {
 
             case HANDSHAKE -> {
-                return new HandshakePayload(rawPayload);
+                String[] parts = rawPayload.split(":");
+                return new HandshakePayload(parts[0], Integer.parseInt(parts[1]));
             }
 
             case PEER_DISCOVERY_REQUEST -> {

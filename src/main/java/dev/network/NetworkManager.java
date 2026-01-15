@@ -154,6 +154,10 @@ public class NetworkManager {
         knownPeers.remove(peerInfo);
     }
 
+    public int getPort() {
+        return config.getNodePort();
+    }
+
     private void registerProtocols() {
         messageHandler.registerProtocol(MessageType.PEER_DISCOVERY_REQUEST, peerDiscoveryProtocol);
         messageHandler.registerProtocol(MessageType.PEER_DISCOVERY_RESPONSE, peerDiscoveryProtocol);
