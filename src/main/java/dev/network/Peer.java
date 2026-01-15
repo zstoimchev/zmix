@@ -90,7 +90,6 @@ public class Peer implements Runnable {
                         break;
                     }
                     messageQueue.getQueue().add(new Event(this, message));
-                    logger.info("Received message of type {} from peer {}", message.getMessageType(), this.peerId);
                 } catch (IOException e) {
                     logger.error("Could not read message from peer: " + e.getMessage(), e);
                     isRunning.set(false);
@@ -164,9 +163,9 @@ public class Peer implements Runnable {
     }
 
     public void send(Message message) {
-        if (message.getSignature() == null) {
-            message = networkManager.getCrypto().signMessage(message);
-        }
+//        if (message.getSignature() == null) {
+//            message = networkManager.getCrypto().signMessage(message);
+//        }
 
         try {
             synchronized (out) {

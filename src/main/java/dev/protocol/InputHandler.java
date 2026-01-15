@@ -17,7 +17,7 @@ public class InputHandler extends Thread {
     @Override
     public void run() {
         while (!this.isInterrupted()) {
-            System.out.print("Enter command: ");
+//            System.out.print("Enter command: ");
             String input = scanner.nextLine();
             System.out.println("You entered: " + input);
             processRequest(input);

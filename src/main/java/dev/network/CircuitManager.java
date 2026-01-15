@@ -1,8 +1,8 @@
 package dev.network;
 
 import dev.message.payload.CircuitCreatePayload;
-import dev.message.payload.CircuitExtendEncryptedPayload;
-import dev.message.payload.CircuitExtendPayload;
+import dev.message.payload.CircuitExtendPayloadEncrypted;
+import dev.message.payload.CircuitExtendRequestPayload;
 import dev.models.Message;
 import dev.message.MessageBuilder;
 import dev.models.PeerInfo;
@@ -30,7 +30,7 @@ public class CircuitManager {
     @Getter
     private UUID myCircuitId;
     private List<PeerInfo> path;
-    private Map<Integer, byte[]> keys;
+    private final Map<Integer, byte[]> keys;
     private final Map<Integer, KeyPair> pendingKeys;
     private CircuitType circuitType;
     private Peer entryPeer;
@@ -95,7 +95,6 @@ public class CircuitManager {
         pendingKeys.put(0, eph);
 
         Message msg = MessageBuilder.buildCircuitCreateMessageRequest(myCircuitId, Base64.getEncoder().encodeToString(eph.getPublic().getEncoded()));
-
         this.entryPeer.send(msg);
     }
 
@@ -117,11 +116,8 @@ public class CircuitManager {
                 return null;
             }
         }
-
-        return null; // Timeout connecting to peer
-        // TODO: handle timeout properly in the parent method
+        return null;
     }
-
 
     public void onCircuitCreateRequest(Peer peer, UUID circuitId, CircuitCreatePayload payload) {
         KeyPair ephemeralKeyPair = crypto.generateECDHKeyPair();
@@ -130,14 +126,32 @@ public class CircuitManager {
         byte[] sharedSecret = crypto.performECDH(ephemeralKeyPair.getPrivate(), theirEphemeralPublicKey);
         byte[] sessionKey = crypto.deriveAESKey(sharedSecret);
 
-        relayCircuits.put(circuitId, new RelayCircuit(circuitId, peer, null, sessionKey));
+        relayCircuits.put(circuitId, new RelayCircuit(peer, null, sessionKey));
 
         String ourEphemeralKeyBase64 = Base64.getEncoder().encodeToString(ephemeralKeyPair.getPublic().getEncoded());
         Message response = MessageBuilder.buildCircuitCreateMessageResponse(circuitId, ourEphemeralKeyBase64);
+
         peer.send(response);
     }
 
-    public void onCircuitCreateResponse(Peer peer, UUID circuitId, CircuitCreatePayload payload) {
+    public void onCircuitCreateResponse(Peer peer, Message message) {
+        CircuitCreatePayload payload = (CircuitCreatePayload) message.getPayload();
+        UUID circuitId = payload.getCircuitId();
+
+        if (!circuitId.equals(this.getMyCircuitId())) {
+            RelayCircuit relay = relayCircuits.get(circuitId);
+            if (relay == null) {
+                logger.warn("Unknown relay circuit {}", circuitId);
+                return;
+            }
+
+            byte[] ephemeralBytes = payload.getEphemeralKey().getBytes(StandardCharsets.UTF_8);
+            byte[] encrypted = crypto.encryptAES(ephemeralBytes, relay.sessionKey);
+            Message extended = MessageBuilder.buildCircuitExtendMessageResponse(circuitId, encrypted);
+            relay.previousHop.send(extended);
+            return;
+        }
+
         KeyPair eph = pendingKeys.remove(0);
         PublicKey theirPub = crypto.decodePublicKey(payload.getEphemeralKey());
 
@@ -156,12 +170,6 @@ public class CircuitManager {
         }
     }
 
-    public void onCircuitCreatedResponseExtended(Peer peer, UUID circuitId, CircuitCreatePayload payload) {
-        // so, here we received circuit created, but it is not for our circuit
-        // meaning, we need to encrypt the payload together with the circuitId,
-        // and send to the previous peer in the format of circuitExtendedMessage
-    }
-
     private void extendToNextHop(int hop) {
         logger.info("Extending circuit to hop {}", hop);
         PeerInfo nextHop = path.get(hop);
@@ -169,69 +177,67 @@ public class CircuitManager {
         KeyPair eph = crypto.generateECDHKeyPair();
         pendingKeys.put(hop, eph);
 
-        CircuitExtendPayload payload = new CircuitExtendPayload(
-                nextHop.getPublicKey(),
-                nextHop.getHost(),
-                nextHop.getPort(),
+        CircuitExtendRequestPayload payload = new CircuitExtendRequestPayload(
+                this.getMyCircuitId(),
+                nextHop,
                 Base64.getEncoder().encodeToString(eph.getPublic().getEncoded()));
 
         byte[] encrypted = payload.toBytes();
-        for (int i = hop - 1; i >= 0; i--) {
-            encrypted = crypto.encryptAES(encrypted, keys.get(i));
-        }
-
-        Message msg = MessageBuilder.buildCircuitExtendMessageRequest(myCircuitId, encrypted);
-        entryPeer.send(msg);
-        logger.info("Sent CIRCUIT_EXTEND for hop {}", hop);
+        for (int i = hop - 1; i >= 0; i--) encrypted = crypto.encryptAES(encrypted, keys.get(i));
+        Message message = MessageBuilder.buildCircuitExtendMessageRequest(myCircuitId, encrypted);
+        entryPeer.send(message);
     }
 
     public void onCircuitExtendRequest(Peer peer, Message message) {
-        logger.info("Received CIRCUIT_EXTEND from peer: {}", peer.getPeerId());
-        CircuitExtendEncryptedPayload payload = (CircuitExtendEncryptedPayload) message.getPayload();
+        CircuitExtendPayloadEncrypted payload = (CircuitExtendPayloadEncrypted) message.getPayload();
         UUID circuitId = payload.getCircuitId();
         RelayCircuit relay = relayCircuits.get(circuitId);
 
         if (relay == null) {
-            logger.warn("Unknown circuit: {}", circuitId);
+            logger.warn("Received unknown circuit: {}", circuitId);
             return;
         }
 
         byte[] decrypted = crypto.decryptAES(payload.getEncryptedData(), relay.sessionKey);
-
         if (relay.nextHop != null) {
-            // Just forward to next hop
-            Message forwardMsg = MessageBuilder.buildCircuitExtendMessageRequest(circuitId, decrypted);
-            relay.nextHop.send(forwardMsg);
-            logger.info("Forwarded CIRCUIT_EXTEND to next hop");
+            Message forwardMessage = MessageBuilder.buildCircuitExtendMessageRequest(circuitId, decrypted);
+            relay.nextHop.send(forwardMessage);
             return;
         }
 
-        // We are the next hop target
-        CircuitExtendPayload extendPayload = CircuitExtendPayload.fromBytes(decrypted);
-        Peer nextPeer = getOrConnectToPeer(new PeerInfo(extendPayload.getPublicKey(), extendPayload.getHost(), extendPayload.getPort()));
+        CircuitExtendRequestPayload extendPayload = CircuitExtendRequestPayload.fromBytes(decrypted);
+        Peer nextPeer = getOrConnectToPeer(extendPayload.getPeerInfo());
 
         if (nextPeer == null) {
-            logger.error("Failed to connect to next hop");
+            logger.error("Failed to connect to next hop. Circuit involved: {}", circuitId);
             return;
         }
 
+        Message createMessage = MessageBuilder.buildCircuitCreateMessageRequest(circuitId, extendPayload.getEphemeralKey());
+        nextPeer.send(createMessage);
         relay.nextHop = nextPeer;
-
-        Message createMsg = MessageBuilder.buildCircuitCreateMessageRequest(circuitId, extendPayload.getEphemeralKey());
-        nextPeer.send(createMsg);
-
-        logger.info("Forwarded CIRCUIT_CREATE to next hop");
     }
 
     public void onCircuitExtendResponse(Peer peer, Message message) {
-        logger.info("Received CIRCUIT_EXTENDED response");
+        CircuitExtendPayloadEncrypted payload = (CircuitExtendPayloadEncrypted) message.getPayload();
+        UUID circuitId = payload.getCircuitId();
 
-        CircuitExtendEncryptedPayload payload = (CircuitExtendEncryptedPayload) message.getPayload();
-        byte[] data = payload.getEncryptedData();
+        if (!circuitId.equals(this.getMyCircuitId())) {
+            RelayCircuit relay = relayCircuits.get(circuitId);
+            if (relay == null) {
+                logger.warn("Unknown relay circuit {}", circuitId);
+                return;
+            }
 
-        for (int i = 0; i < currentHop; i++) {
-            data = crypto.decryptAES(data, keys.get(i));
+            byte[] encryptedData = payload.getEncryptedData();
+            byte[] encrypted = crypto.encryptAES(encryptedData, relay.sessionKey);
+            Message extended = MessageBuilder.buildCircuitExtendMessageResponse(circuitId, encrypted);
+            relay.previousHop.send(extended);
+            return;
         }
+
+        byte[] data = payload.getEncryptedData();
+        for (int i = 0; i < currentHop; i++) data = crypto.decryptAES(data, keys.get(i));
 
         String ephemeralKeyBase64 = new String(data, StandardCharsets.UTF_8);
         KeyPair eph = pendingKeys.remove(currentHop);
@@ -252,27 +258,6 @@ public class CircuitManager {
         }
     }
 
-    public void onCircuitExtendResponseAsRelay(Peer from, Message message) {
-        logger.info("Received CIRCUIT_EXTENDED as relay");
-
-        CircuitExtendEncryptedPayload payload = (CircuitExtendEncryptedPayload) message.getPayload();
-        UUID circuitId = payload.getCircuitId();
-        RelayCircuit relay = relayCircuits.get(circuitId);
-
-        if (relay == null) {
-            logger.warn("Unknown circuit: {}", circuitId);
-            return;
-        }
-
-        byte[] responseData = payload.getEncryptedData();
-        byte[] encrypted = crypto.encryptAES(responseData, relay.sessionKey);
-
-        Message response = MessageBuilder.buildCircuitExtendMessageResponse(circuitId, encrypted);
-        relay.previousHop.send(response);
-
-        logger.info("Forwarded CIRCUIT_EXTENDED to previous hop");
-    }
-
     public boolean isCircuitReady() {
         return circuitType == CircuitType.INITIAL && currentHop == circuitLength;
     }
@@ -284,7 +269,6 @@ public class CircuitManager {
 
     @AllArgsConstructor
     private static class RelayCircuit {
-        UUID circuitId;
         Peer previousHop;
         Peer nextHop;
         byte[] sessionKey;

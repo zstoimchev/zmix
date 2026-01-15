@@ -7,7 +7,7 @@ import java.util.UUID;
 
 @Getter
 @AllArgsConstructor
-public class CircuitExtendEncryptedPayload extends MessagePayload{
+public class CircuitExtendPayloadEncrypted extends MessagePayload{
     private final UUID circuitId;
     private final byte[] encryptedData;
 }

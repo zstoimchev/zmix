@@ -43,7 +43,7 @@ public class Crypto {
             ecdsaSign.update(payloadString.getBytes(StandardCharsets.UTF_8));
             byte[] signature = ecdsaSign.sign();
 
-            message.setSignature(Base64.getEncoder().encodeToString(signature));
+//            message.setSignature(Base64.getEncoder().encodeToString(signature));
             return message;
         } catch (Exception e) {
             throw new RuntimeException("Failed to sign message", e);
@@ -54,7 +54,9 @@ public class Crypto {
         try {
             Signature ecdsaVerify = Signature.getInstance("SHA256withECDSA");
             ecdsaVerify.update(message.getPayload().toString().getBytes(StandardCharsets.UTF_8));
-            return ecdsaVerify.verify(Base64.getDecoder().decode(message.getSignature()));
+//            return ecdsaVerify.verify(Base64.getDecoder().decode(message.getSignature()));
+            return false;
+
         } catch (Exception e) {
             throw new RuntimeException("Failed to verify message", e);
         }
