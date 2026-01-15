@@ -115,13 +115,13 @@ public class NetworkManager {
 
         for (PeerInfo info : candidates) {
             if (connectedPeers.size() > config.getMinConnections()) break;
-            logger.debug(" ................................., {}, {}", info.host, info.port);
             connectToPeer(info.host, info.port);
         }
     }
 
     public void connectToPeer(String ip, int port) {
         try {
+            logger.info("--------------------------------------------------------- {}:{}", ip, port);
             Socket clientSocket = new Socket(ip, port);
             Peer newPeer = new Peer(clientSocket, queue, this, PeerDirection.OUTBOUND);
             peerExecutor.submit(newPeer);

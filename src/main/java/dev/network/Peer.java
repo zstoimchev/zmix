@@ -1,5 +1,6 @@
 package dev.network;
 
+import dev.models.Event;
 import dev.models.Message;
 import dev.message.MessageBuilder;
 import dev.models.enums.MessageType;
@@ -162,14 +163,15 @@ public class Peer implements Runnable {
     }
 
     public void send(Message message) {
-        if (message.getSignature() == null) {
-            message = networkManager.getCrypto().signMessage(message);
-        }
+//        if (message.getSignature() == null) {
+//            message = networkManager.getCrypto().signMessage(message);
+//        }
 
         try {
             synchronized (out) {
                 out.write(MessageSerializer.serialize(message) + "\n");
                 out.flush();
+                logger.info("Sent message of type {} to peer {}", message.getMessageType(), this.peerId);
             }
         } catch (IOException e) {
             logger.error("Could not send message to peer..." + e.getMessage());
