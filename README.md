@@ -4,7 +4,15 @@ This project is an implementation of a simple Peer to Peer Network (Onion Routin
 
 [//]: # (## Features)
 
-[//]: # (## Getting started)
+## Getting started
+
+To quickly get started with the network, docker-compose is used to build and run the Java application inside a Docker container. You simply need to run:
+
+```bash
+docker-compose up --build
+```
+
+This will spin up few docker containers, with which circuit can be created and send requests.
 
 [//]: # (## Prerequisites)
 
@@ -26,6 +34,5 @@ You can reach me at: [zstoimchev@outlook.com](mailto:zstoimchev@outlook.com)
 
 ## License
 
-This is built by me and myself only. So...
-
-to run the image: `docker-compose up --build` 
+This is built by me and myself only. So... \
+© 2026 Zhivko Stoimchev. All rights reserved.
