@@ -119,7 +119,10 @@ public class CircuitManager {
         return null;
     }
 
-    public void onCircuitCreateRequest(Peer peer, UUID circuitId, CircuitCreatePayload payload) {
+    public void onCircuitCreateRequest(Peer peer, Message message) {
+        CircuitCreatePayload payload = (CircuitCreatePayload) message.getPayload();
+        UUID circuitId = payload.getCircuitId();
+
         KeyPair ephemeralKeyPair = crypto.generateECDHKeyPair();
         PublicKey theirEphemeralPublicKey = crypto.decodePublicKey(payload.getEphemeralKey());
 
@@ -270,6 +273,16 @@ public class CircuitManager {
         // send it to entry peer and let it do the work from there on
         // response will be handled in Peer.onCircuitDataMessage
 //        construct get request, encrypt it using session keys, send it to entry peer
+
+        return;
+    }
+
+    public void onDataTransferRequest(Peer peer, Message message) {
+
+        return;
+    }
+
+    public void onDataTransferResponse(Peer peer, Message message) {
 
         return;
     }

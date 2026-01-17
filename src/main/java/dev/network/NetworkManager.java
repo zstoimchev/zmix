@@ -165,6 +165,8 @@ public class NetworkManager {
         messageHandler.registerProtocol(MessageType.CIRCUIT_CREATE_RESPONSE, circuitProtocol);
         messageHandler.registerProtocol(MessageType.CIRCUIT_EXTEND_REQUEST, circuitProtocol);
         messageHandler.registerProtocol(MessageType.CIRCUIT_EXTEND_RESPONSE, circuitProtocol);
+        messageHandler.registerProtocol(MessageType.DATA_TRANSFER_REQUEST, circuitProtocol);
+        messageHandler.registerProtocol(MessageType.DATA_TRANSFER_RESPONSE, circuitProtocol);
         logger.info("Registered all protocol handlers");
     }
 }
