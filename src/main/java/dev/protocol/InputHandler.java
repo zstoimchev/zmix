@@ -29,7 +29,7 @@ public class InputHandler extends Thread {
     }
 
     private void processRequest(String input) {
-        if (isUrlValid(input)) circuitManager.sendRequest("stackoverflow.com"); // todo: hardcoded input for testing
+        if (isUrlValid(input)) circuitManager.sendRequest("http://stackoverflow.com"); // todo: hardcoded input for testing
         else logger.error("Invalid URL. Must start with http:// or https://");
     }
 

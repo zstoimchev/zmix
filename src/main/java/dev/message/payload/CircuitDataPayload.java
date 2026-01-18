@@ -41,7 +41,7 @@ public class CircuitDataPayload extends MessagePayload {
         buffer.get(data);
 
         String serialized = new String(metadataBytes, StandardCharsets.UTF_8);
-        String[] parts = serialized.split("\\|", 3);
+        String[] parts = serialized.split("\\|", 4);
         UUID id = UUID.fromString(parts[0]);
         String host = parts[1];
         String port = parts[2];

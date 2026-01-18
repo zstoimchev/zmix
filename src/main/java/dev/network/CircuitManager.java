@@ -283,16 +283,22 @@ public class CircuitManager {
 
         URI uri = URI.create(input);
         String host = uri.getHost();
+        logger.debug("the host is {}", host);
 //        String path = uri.getRawPath();
 //        if (path == null || path.isEmpty()) path = "/";                 // todo
 //        if (uri.getRawQuery() != null) path += "?" + uri.getRawQuery(); // todo
-
+/*
         String http = """
                   GET / HTTP/1.1\r
                   Host: %s\r
                   Connection: close\r
                   \r
-                """.formatted(host);
+                """.stripIndent().replace("\r", "\r\n").formatted(host);
+*/
+        String http =   "GET / HTTP/1.1\r\n" +
+                        "Host: " + host + "\r\n" +
+                        "Connection: close\r\n" +
+                        "\r\n";
 
         byte[] requestBytes = http.getBytes(StandardCharsets.UTF_8);
         byte[] encryptedRequest = encryptRequest(requestBytes);
@@ -322,35 +328,41 @@ public class CircuitManager {
 
         if (relay.nextHop == null) {
             try {
-                sendAsExitNode(decrypted);
+                byte[] response = sendAsExitNode(payload.getHost(), payload.getPort(), decrypted);
+                Message responseMessage = MessageBuilder.buildDataTransferMessageResponse(
+                        circuitId,
+                        response
+                );
+                relay.previousHop.send(responseMessage);
+                return;
             } catch (IOException e) {
                 throw new CustomException("Failed to send as exit node", e);
             }
         }
 
-        // decrypt and forward
         Message dataMessage = MessageBuilder.buildDataTransferMessageRequest(
                 circuitId,
                 payload.getHost(),
                 payload.getPort(),
                 decrypted
         );
-        relay.previousHop.send(dataMessage);
+        relay.nextHop.send(dataMessage);
     }
 
-    private void sendAsExitNode(byte[] data) throws IOException {
-        CircuitDataPayload payload = CircuitDataPayload.fromBytes(data);
+    private byte[] sendAsExitNode(String host, String port, byte[] httpRequestData) throws IOException {
+        Socket s = new Socket(InetAddress.getByName(host), Integer.parseInt(port));
 
-        Socket s = new Socket(InetAddress.getByName(payload.host), Integer.parseInt(payload.port));
-        PrintWriter pw = new PrintWriter(s.getOutputStream());
-        pw.print("GET / HTTP/1.1\r\n");
-        pw.print("Host: " + payload.host + "\r\n");
-        pw.print("\r\n");
-        pw.flush();
+        s.getOutputStream().write(httpRequestData);
+        s.getOutputStream().flush();
+
+        StringBuilder response = new StringBuilder();
         BufferedReader br = new BufferedReader(new InputStreamReader(s.getInputStream()));
-        String t;
-        while((t = br.readLine()) != null) System.out.println(t);
+        String line;
+        while((line = br.readLine()) != null) response.append(line).append("\r\n");
         br.close();
+        s.close();
+
+        return response.toString().getBytes(StandardCharsets.UTF_8);
     }
 
     public void onDataTransferResponse(Peer peer, Message message) {
