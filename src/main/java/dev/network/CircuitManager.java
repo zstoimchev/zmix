@@ -13,6 +13,7 @@ import dev.utils.Logger;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.PublicKey;
@@ -266,6 +267,12 @@ public class CircuitManager {
     }
 
     public void sendRequest(String input) {
+        if (!this.isCircuitReady()) {
+            logger.warn("No active circuit. Please try again in short.");
+            this.init();
+            return; // TODO: returning immediately. Maybe queue the request?
+        }
+
         // what to do here?
         // TODO: we have the url that needs to be sent through the circuit
         // encrypt it using the session keys, and create new payload
@@ -273,6 +280,14 @@ public class CircuitManager {
         // send it to entry peer and let it do the work from there on
         // response will be handled in Peer.onCircuitDataMessage
 //        construct get request, encrypt it using session keys, send it to entry peer
+
+        URI uri = URI.create(input);
+        String host = uri.getHost();
+        String path = uri.getRawPath();
+        if (path == null || path.isEmpty()) path = "/";                 // todo
+        if (uri.getRawQuery() != null) path += "?" + uri.getRawQuery(); // todo
+
+
 
         return;
     }

@@ -29,14 +29,8 @@ public class InputHandler extends Thread {
     }
 
     private void processRequest(String input) {
-        if (!circuitManager.isCircuitReady()) {
-            logger.warn("No active circuit. Please try again in short.");
-            circuitManager.init();
-            return; // TODO: returning immediately. Maybe queue the request?
-        }
-
         if (isUrlValid(input)) circuitManager.sendRequest(input);
-        logger.error("Invalid URL. Must start with http:// or https://");
+        else logger.error("Invalid URL. Must start with http:// or https://");
     }
 
     private boolean isUrlValid(String url) {
