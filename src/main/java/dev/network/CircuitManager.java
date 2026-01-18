@@ -17,11 +17,9 @@ import lombok.Getter;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.URI;
-import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.PublicKey;
@@ -287,14 +285,7 @@ public class CircuitManager {
 //        String path = uri.getRawPath();
 //        if (path == null || path.isEmpty()) path = "/";                 // todo
 //        if (uri.getRawQuery() != null) path += "?" + uri.getRawQuery(); // todo
-/*
-        String http = """
-                  GET / HTTP/1.1\r
-                  Host: %s\r
-                  Connection: close\r
-                  \r
-                """.stripIndent().replace("\r", "\r\n").formatted(host);
-*/
+
         String http =   "GET / HTTP/1.1\r\n" +
                         "Host: " + host + "\r\n" +
                         "Connection: close\r\n" +
@@ -329,9 +320,10 @@ public class CircuitManager {
         if (relay.nextHop == null) {
             try {
                 byte[] response = sendAsExitNode(payload.getHost(), payload.getPort(), decrypted);
+                byte[] encryptedResponse = crypto.encryptAES(response, relay.sessionKey);
                 Message responseMessage = MessageBuilder.buildDataTransferMessageResponse(
                         circuitId,
-                        response
+                        encryptedResponse
                 );
                 relay.previousHop.send(responseMessage);
                 return;
@@ -362,12 +354,34 @@ public class CircuitManager {
         br.close();
         s.close();
 
+        logger.debug("the response is {}", response.toString());
+
         return response.toString().getBytes(StandardCharsets.UTF_8);
     }
 
     public void onDataTransferResponse(Peer peer, Message message) {
+        CircuitDataPayload payload = (CircuitDataPayload) message.getPayload();
+        UUID circuitId = payload.getCircuitId();
 
-        return;
+        if (!circuitId.equals(this.getMyCircuitId())) {
+            RelayCircuit relay = relayCircuits.get(circuitId);
+            if (relay == null) {
+                logger.warn("Unknown relay circuit {}", circuitId);
+                return;
+            }
+
+            byte[] encryptedData = crypto.encryptAES(payload.getData(), relay.sessionKey);
+            Message responseMessage = MessageBuilder.buildDataTransferMessageResponse(circuitId, encryptedData);
+            relay.previousHop.send(responseMessage);
+            return;
+        }
+
+        byte[] decrypted = decryptResponse(payload.getData());
+        String response = new String(decrypted, StandardCharsets.UTF_8);
+
+        logger.info("============================== HTTP RESPONSE ==============================");
+        logger.info(response);
+        logger.info("===========================================================================");
     }
 
     private byte[] encryptRequest(byte[] requestBytes) {
@@ -376,6 +390,14 @@ public class CircuitManager {
             encrypted = crypto.encryptAES(encrypted, keys.get(i));
         }
         return encrypted;
+    }
+
+    private byte[] decryptResponse(byte[] responseBytes) {
+        byte[] decrypted = responseBytes;
+        for (int i = 0; i < currentHop; i++) {
+            decrypted = crypto.decryptAES(decrypted, keys.get(i));
+        }
+        return decrypted;
     }
 
     private void send(Message message) {
