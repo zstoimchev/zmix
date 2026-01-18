@@ -69,6 +69,14 @@ public class MessageSerializer {
                 return cer.getCircuitId().toString() + "@" + base64Data;
             }
 
+            case DATA_TRANSFER_REQUEST -> {
+                if (!(payload instanceof CircuitDataPayload cdp)) {
+                    throw new CustomException("Expected DataTransferPayload", null);
+                }
+                byte[] bytes = cdp.toBytes();
+                return java.util.Base64.getEncoder().encodeToString(bytes);
+            }
+
             default -> throw new CustomException("Unexpected value: " + payload, null);
         }
     }
@@ -134,6 +142,11 @@ public class MessageSerializer {
                 UUID circuitId = UUID.fromString(parts[0]);
                 byte[] encryptedData = java.util.Base64.getDecoder().decode(parts[1]);
                 return new CircuitExtendPayloadEncrypted(circuitId, encryptedData);
+            }
+
+            case DATA_TRANSFER_REQUEST -> {
+                byte[] data = java.util.Base64.getDecoder().decode(rawPayload);
+                return CircuitDataPayload.fromBytes(data);
             }
 
             default -> throw new CustomException("Unexpected value: " + messageType, null);

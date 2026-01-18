@@ -72,4 +72,22 @@ public class MessageBuilder {
                 new CircuitExtendPayloadEncrypted(circuitId, data)
         );
     }
+
+    public static Message buildDataTransferMessageRequest(UUID circuitId, String host, String port, byte[] data) {
+        return new Message(
+                MessageType.DATA_TRANSFER_REQUEST,
+                System.currentTimeMillis(),
+                UUID.randomUUID().toString(),
+                new CircuitDataPayload(circuitId, host, port, data)
+        );
+    }
+
+    public static Message buildDataTransferMessageResponse(UUID circuitId, byte[] data) {
+        return new Message(
+                MessageType.DATA_TRANSFER_REQUEST,
+                System.currentTimeMillis(),
+                UUID.randomUUID().toString(),
+                new CircuitDataPayload(circuitId, null, null, data)
+        );
+    }
 }
