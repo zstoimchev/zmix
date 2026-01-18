@@ -1,6 +1,7 @@
 package dev.network;
 
 import dev.message.payload.CircuitCreatePayload;
+import dev.message.payload.CircuitDataPayload;
 import dev.message.payload.CircuitExtendPayloadEncrypted;
 import dev.message.payload.CircuitExtendRequestPayload;
 import dev.models.Message;
@@ -13,7 +14,14 @@ import dev.utils.Logger;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.InetAddress;
+import java.net.Socket;
 import java.net.URI;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.PublicKey;
@@ -273,33 +281,93 @@ public class CircuitManager {
             return; // TODO: returning immediately. Maybe queue the request?
         }
 
-        // what to do here?
-        // TODO: we have the url that needs to be sent through the circuit
-        // encrypt it using the session keys, and create new payload
-        // payload will be of type CircuitDataPayload
-        // send it to entry peer and let it do the work from there on
-        // response will be handled in Peer.onCircuitDataMessage
-//        construct get request, encrypt it using session keys, send it to entry peer
-
         URI uri = URI.create(input);
         String host = uri.getHost();
-        String path = uri.getRawPath();
-        if (path == null || path.isEmpty()) path = "/";                 // todo
-        if (uri.getRawQuery() != null) path += "?" + uri.getRawQuery(); // todo
+//        String path = uri.getRawPath();
+//        if (path == null || path.isEmpty()) path = "/";                 // todo
+//        if (uri.getRawQuery() != null) path += "?" + uri.getRawQuery(); // todo
 
+        String http = """
+                  GET / HTTP/1.1\r
+                  Host: %s\r
+                  Connection: close\r
+                  \r
+                """.formatted(host);
 
+        byte[] requestBytes = http.getBytes(StandardCharsets.UTF_8);
+        byte[] encryptedRequest = encryptRequest(requestBytes);
 
-        return;
+        Message dataMessage = MessageBuilder.buildDataTransferMessageRequest(
+                this.getMyCircuitId(),
+                host,
+                "80",
+                encryptedRequest
+        );
+
+        send(dataMessage);
     }
 
     public void onDataTransferRequest(Peer peer, Message message) {
+        CircuitDataPayload payload = (CircuitDataPayload) message.getPayload();
+        UUID circuitId = payload.getCircuitId();
 
-        return;
+        // if nextHop is null, send as exit node
+        RelayCircuit relay = relayCircuits.get(circuitId);
+        if (relay == null) {
+            logger.warn("Unknown relay circuit {}", circuitId);
+            return;
+        }
+
+        byte[] decrypted = crypto.decryptAES(payload.getData(), relay.sessionKey);
+
+        if (relay.nextHop == null) {
+            try {
+                sendAsExitNode(decrypted);
+            } catch (IOException e) {
+                throw new CustomException("Failed to send as exit node", e);
+            }
+        }
+
+        // decrypt and forward
+        Message dataMessage = MessageBuilder.buildDataTransferMessageRequest(
+                circuitId,
+                payload.getHost(),
+                payload.getPort(),
+                decrypted
+        );
+        relay.previousHop.send(dataMessage);
+    }
+
+    private void sendAsExitNode(byte[] data) throws IOException {
+        CircuitDataPayload payload = CircuitDataPayload.fromBytes(data);
+
+        Socket s = new Socket(InetAddress.getByName(payload.host), Integer.parseInt(payload.port));
+        PrintWriter pw = new PrintWriter(s.getOutputStream());
+        pw.print("GET / HTTP/1.1\r\n");
+        pw.print("Host: " + payload.host + "\r\n");
+        pw.print("\r\n");
+        pw.flush();
+        BufferedReader br = new BufferedReader(new InputStreamReader(s.getInputStream()));
+        String t;
+        while((t = br.readLine()) != null) System.out.println(t);
+        br.close();
     }
 
     public void onDataTransferResponse(Peer peer, Message message) {
 
         return;
+    }
+
+    private byte[] encryptRequest(byte[] requestBytes) {
+        byte[] encrypted = requestBytes;
+        for (int i = currentHop - 1; i >= 0; i--) {
+            encrypted = crypto.encryptAES(encrypted, keys.get(i));
+        }
+        return encrypted;
+    }
+
+    private void send(Message message) {
+        entryPeer.send(message);
     }
 
     @AllArgsConstructor

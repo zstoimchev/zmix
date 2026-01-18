@@ -22,14 +22,14 @@ public class InputHandler extends Thread {
         while (!this.isInterrupted()) {
             logger.info("Enter URL to send request: ");
             String input = scanner.nextLine();
-            logger.debug("URL to send: " + input);
+//            logger.debug("URL to send: " + input);
             processRequest(input);
         }
         scanner.close();
     }
 
     private void processRequest(String input) {
-        if (isUrlValid(input)) circuitManager.sendRequest(input);
+        if (isUrlValid(input)) circuitManager.sendRequest("stackoverflow.com"); // todo: hardcoded input for testing
         else logger.error("Invalid URL. Must start with http:// or https://");
     }
 
