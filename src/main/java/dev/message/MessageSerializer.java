@@ -69,7 +69,7 @@ public class MessageSerializer {
                 return cer.getCircuitId().toString() + "@" + base64Data;
             }
 
-            case DATA_TRANSFER_REQUEST -> {
+            case DATA_TRANSFER_REQUEST, DATA_TRANSFER_RESPONSE -> {
                 if (!(payload instanceof CircuitDataPayload cdp)) {
                     throw new CustomException("Expected DataTransferPayload", null);
                 }
@@ -144,7 +144,7 @@ public class MessageSerializer {
                 return new CircuitExtendPayloadEncrypted(circuitId, encryptedData);
             }
 
-            case DATA_TRANSFER_REQUEST -> {
+            case DATA_TRANSFER_REQUEST, DATA_TRANSFER_RESPONSE -> {
                 byte[] data = java.util.Base64.getDecoder().decode(rawPayload);
                 return CircuitDataPayload.fromBytes(data);
             }

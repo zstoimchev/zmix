@@ -84,10 +84,10 @@ public class MessageBuilder {
 
     public static Message buildDataTransferMessageResponse(UUID circuitId, byte[] data) {
         return new Message(
-                MessageType.DATA_TRANSFER_REQUEST,
+                MessageType.DATA_TRANSFER_RESPONSE,
                 System.currentTimeMillis(),
                 UUID.randomUUID().toString(),
-                new CircuitDataPayload(circuitId, null, null, data)
+                new CircuitDataPayload(circuitId, "", "", data)
         );
     }
 }

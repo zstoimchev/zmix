@@ -17,11 +17,9 @@ import lombok.Getter;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.URI;
-import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.PublicKey;
@@ -283,16 +281,15 @@ public class CircuitManager {
 
         URI uri = URI.create(input);
         String host = uri.getHost();
+        logger.debug("the host is {}", host);
 //        String path = uri.getRawPath();
 //        if (path == null || path.isEmpty()) path = "/";                 // todo
 //        if (uri.getRawQuery() != null) path += "?" + uri.getRawQuery(); // todo
 
-        String http = """
-                  GET / HTTP/1.1\r
-                  Host: %s\r
-                  Connection: close\r
-                  \r
-                """.formatted(host);
+        String http =   "GET / HTTP/1.1\r\n" +
+                        "Host: " + host + "\r\n" +
+                        "Connection: close\r\n" +
+                        "\r\n";
 
         byte[] requestBytes = http.getBytes(StandardCharsets.UTF_8);
         byte[] encryptedRequest = encryptRequest(requestBytes);
@@ -322,40 +319,66 @@ public class CircuitManager {
 
         if (relay.nextHop == null) {
             try {
-                sendAsExitNode(decrypted);
+                byte[] response = sendAsExitNode(payload.getHost(), payload.getPort(), decrypted);
+                byte[] encryptedResponse = crypto.encryptAES(response, relay.sessionKey);
+                Message responseMessage = MessageBuilder.buildDataTransferMessageResponse(
+                        circuitId,
+                        encryptedResponse
+                );
+                relay.previousHop.send(responseMessage);
+                return;
             } catch (IOException e) {
                 throw new CustomException("Failed to send as exit node", e);
             }
         }
 
-        // decrypt and forward
         Message dataMessage = MessageBuilder.buildDataTransferMessageRequest(
                 circuitId,
                 payload.getHost(),
                 payload.getPort(),
                 decrypted
         );
-        relay.previousHop.send(dataMessage);
+        relay.nextHop.send(dataMessage);
     }
 
-    private void sendAsExitNode(byte[] data) throws IOException {
-        CircuitDataPayload payload = CircuitDataPayload.fromBytes(data);
+    private byte[] sendAsExitNode(String host, String port, byte[] httpRequestData) throws IOException {
+        Socket s = new Socket(InetAddress.getByName(host), Integer.parseInt(port));
 
-        Socket s = new Socket(InetAddress.getByName(payload.host), Integer.parseInt(payload.port));
-        PrintWriter pw = new PrintWriter(s.getOutputStream());
-        pw.print("GET / HTTP/1.1\r\n");
-        pw.print("Host: " + payload.host + "\r\n");
-        pw.print("\r\n");
-        pw.flush();
+        s.getOutputStream().write(httpRequestData);
+        s.getOutputStream().flush();
+
+        StringBuilder response = new StringBuilder();
         BufferedReader br = new BufferedReader(new InputStreamReader(s.getInputStream()));
-        String t;
-        while((t = br.readLine()) != null) System.out.println(t);
+        String line;
+        while((line = br.readLine()) != null) response.append(line).append("\r\n");
         br.close();
+        s.close();
+        return response.toString().getBytes(StandardCharsets.UTF_8);
     }
 
     public void onDataTransferResponse(Peer peer, Message message) {
+        CircuitDataPayload payload = (CircuitDataPayload) message.getPayload();
+        UUID circuitId = payload.getCircuitId();
 
-        return;
+        if (!circuitId.equals(this.getMyCircuitId())) {
+            RelayCircuit relay = relayCircuits.get(circuitId);
+            if (relay == null) {
+                logger.warn("Unknown relay circuit {}", circuitId);
+                return;
+            }
+
+            byte[] encryptedData = crypto.encryptAES(payload.getData(), relay.sessionKey);
+            Message responseMessage = MessageBuilder.buildDataTransferMessageResponse(circuitId, encryptedData);
+            relay.previousHop.send(responseMessage);
+            return;
+        }
+
+        byte[] decrypted = decryptResponse(payload.getData());
+        String response = new String(decrypted, StandardCharsets.UTF_8);
+
+        logger.info("============================== HTTP RESPONSE ==============================");
+        logger.info(response);
+        logger.info("===========================================================================");
     }
 
     private byte[] encryptRequest(byte[] requestBytes) {
@@ -364,6 +387,14 @@ public class CircuitManager {
             encrypted = crypto.encryptAES(encrypted, keys.get(i));
         }
         return encrypted;
+    }
+
+    private byte[] decryptResponse(byte[] responseBytes) {
+        byte[] decrypted = responseBytes;
+        for (int i = 0; i < currentHop; i++) {
+            decrypted = crypto.decryptAES(decrypted, keys.get(i));
+        }
+        return decrypted;
     }
 
     private void send(Message message) {
