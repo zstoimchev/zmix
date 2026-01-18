@@ -353,9 +353,6 @@ public class CircuitManager {
         while((line = br.readLine()) != null) response.append(line).append("\r\n");
         br.close();
         s.close();
-
-        logger.debug("the response is {}", response.toString());
-
         return response.toString().getBytes(StandardCharsets.UTF_8);
     }
 
