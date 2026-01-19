@@ -3,22 +3,15 @@ package dev.message;
 import dev.message.payload.*;
 import dev.models.enums.MessageType;
 import dev.models.Message;
-import dev.models.PeerInfo;
 import dev.utils.CustomException;
-import dev.utils.Logger;
 
-import java.util.List;
-import java.util.UUID;
 import java.util.regex.Pattern;
 
 public class MessageSerializer {
     private static final String delimiter = ";delim;;;;";
 
     public static String serialize(Message message) {
-        return message.getMessageType() + delimiter +
-                message.getTimestamp() + delimiter +
-                message.getMessageId() + delimiter +
-                serializePayload(message.getMessageType(), message.getPayload());
+        return message.getMessageType() + delimiter + message.getTimestamp() + delimiter + message.getMessageId() + delimiter + serializePayload(message.getMessageType(), message.getPayload());
     }
 
     private static String serializePayload(MessageType messageType, MessagePayload payload) {
@@ -27,7 +20,9 @@ public class MessageSerializer {
             case HANDSHAKE -> {
                 if (!(payload instanceof HandshakePayload hp))
                     throw new CustomException("Expected HandshakePayload", null);
-                return hp.getPublicKeyBase64Encoded() + ":" + hp.getPort();
+
+                byte[] bytes = hp.toBytes();
+                return java.util.Base64.getEncoder().encodeToString(bytes);
             }
 
             case PEER_DISCOVERY_REQUEST -> {
@@ -35,44 +30,33 @@ public class MessageSerializer {
             }
 
             case PEER_DISCOVERY_RESPONSE -> {
-                if (!(payload instanceof PeerResponsePayload prp)) {
+                if (!(payload instanceof PeerResponsePayload prp))
                     throw new CustomException("Expected PeerResponsePayload", null);
-                }
 
-                StringBuilder sb = new StringBuilder();
-                List<PeerInfo> peers = prp.getPeerList();
-
-                sb.append(peers.size());
-                for (PeerInfo peer : peers) {
-                    sb.append("#")
-                            .append(peer.getPublicKey())
-                            .append("@")
-                            .append(peer.getHost())
-                            .append(":")
-                            .append(peer.getPort());
-                }
-                return sb.toString();
+                byte[] bytes = prp.toBytes();
+                return java.util.Base64.getEncoder().encodeToString(bytes);
             }
 
             case CIRCUIT_CREATE_REQUEST, CIRCUIT_CREATE_RESPONSE -> {
-                if (!(payload instanceof CircuitCreatePayload ccr)) {
+                if (!(payload instanceof CircuitCreatePayload ccr))
                     throw new CustomException("Expected CircuitCreatePayload", null);
-                }
-                return ccr.getCircuitId().toString() + "@" + ccr.getEphemeralKey();
+
+                byte[] bytes = ccr.toBytes();
+                return java.util.Base64.getEncoder().encodeToString(bytes);
             }
 
             case CIRCUIT_EXTEND_REQUEST, CIRCUIT_EXTEND_RESPONSE -> {
-                if (!(payload instanceof CircuitExtendPayloadEncrypted cer)) {
+                if (!(payload instanceof CircuitExtendPayloadEncrypted cer))
                     throw new CustomException("Expected CircuitExtendEncryptedPayload", null);
-                }
-                String base64Data = java.util.Base64.getEncoder().encodeToString(cer.getEncryptedData());
-                return cer.getCircuitId().toString() + "@" + base64Data;
+
+                byte[] bytes = cer.toBytes();
+                return java.util.Base64.getEncoder().encodeToString(bytes);
             }
 
             case DATA_TRANSFER_REQUEST, DATA_TRANSFER_RESPONSE -> {
-                if (!(payload instanceof CircuitDataPayload cdp)) {
+                if (!(payload instanceof CircuitDataPayload cdp))
                     throw new CustomException("Expected DataTransferPayload", null);
-                }
+
                 byte[] bytes = cdp.toBytes();
                 return java.util.Base64.getEncoder().encodeToString(bytes);
             }
@@ -91,12 +75,7 @@ public class MessageSerializer {
         String messageId = parts[2];
         MessagePayload payload = deserializePayload(messageType, parts[3]);
 
-        return new Message(
-                messageType,
-                timestamp,
-                messageId,
-                payload
-        );
+        return new Message(messageType, timestamp, messageId, payload);
     }
 
     private static MessagePayload deserializePayload(MessageType messageType, String rawPayload) {
@@ -105,8 +84,8 @@ public class MessageSerializer {
         switch (messageType) {
 
             case HANDSHAKE -> {
-                String[] parts = rawPayload.split(":");
-                return new HandshakePayload(parts[0], Integer.parseInt(parts[1]));
+                byte[] data = java.util.Base64.getDecoder().decode(rawPayload);
+                return HandshakePayload.fromBytes(data);
             }
 
             case PEER_DISCOVERY_REQUEST -> {
@@ -114,34 +93,18 @@ public class MessageSerializer {
             }
 
             case PEER_DISCOVERY_RESPONSE -> {
-                String[] peerParts = rawPayload.split("#");
-                int peerCount = Integer.parseInt(peerParts[0]);
-                List<PeerInfo> peerList = new java.util.ArrayList<>();
-
-                for (int i = 1; i <= peerCount; i++) {
-                    String[] infoParts = peerParts[i].split("@");
-                    String publicKey = infoParts[0];
-                    String[] hostPort = infoParts[1].split(":");
-                    String host = hostPort[0];
-                    int port = Integer.parseInt(hostPort[1]);
-
-                    peerList.add(new PeerInfo(publicKey, host, port));
-                }
-                return new PeerResponsePayload(peerList);
+                byte[] data = java.util.Base64.getDecoder().decode(rawPayload);
+                return PeerResponsePayload.fromBytes(data);
             }
 
             case CIRCUIT_CREATE_REQUEST, CIRCUIT_CREATE_RESPONSE -> {
-                String[] ccrParts = rawPayload.split("@");
-                UUID circuitId = UUID.fromString(ccrParts[0]);
-                String secretKey = ccrParts[1];
-                return new CircuitCreatePayload(circuitId, secretKey);
+                byte[] data = java.util.Base64.getDecoder().decode(rawPayload);
+                return CircuitCreatePayload.fromBytes(data);
             }
 
             case CIRCUIT_EXTEND_REQUEST, CIRCUIT_EXTEND_RESPONSE -> {
-                String[] parts = rawPayload.split("@", 2);
-                UUID circuitId = UUID.fromString(parts[0]);
-                byte[] encryptedData = java.util.Base64.getDecoder().decode(parts[1]);
-                return new CircuitExtendPayloadEncrypted(circuitId, encryptedData);
+                byte[] data = java.util.Base64.getDecoder().decode(rawPayload);
+                return CircuitExtendPayloadEncrypted.fromBytes(data);
             }
 
             case DATA_TRANSFER_REQUEST, DATA_TRANSFER_RESPONSE -> {

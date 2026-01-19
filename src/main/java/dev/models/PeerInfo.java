@@ -24,9 +24,4 @@ public class PeerInfo {
         String[] parts = s.split(";", 3);
         return new PeerInfo(parts[0], parts[1], Integer.parseInt(parts[2]));
     }
-
-    @Override
-    public String toString() {
-        return "Public Key: " + publicKey;
-    }
 }
