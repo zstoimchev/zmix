@@ -215,7 +215,7 @@ public class CircuitManager {
             return;
         }
 
-        CircuitExtendRequestPayload extendPayload = new CircuitExtendRequestPayload(decrypted);
+        CircuitExtendRequestPayload extendPayload = CircuitExtendRequestPayload.fromBytes(decrypted);
         Peer nextPeer = getOrConnectToPeer(extendPayload.getPeerInfo());
 
         if (nextPeer == null) {

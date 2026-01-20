@@ -8,26 +8,24 @@ import java.util.UUID;
 @Getter
 @AllArgsConstructor
 public class CircuitCreatePayload extends MessagePayload {
-    public UUID circuitId;
-    public String ephemeralKey;
-
-    public CircuitCreatePayload(byte[] bytes) {
-        this.fromBytes(bytes);
-    }
+    public final UUID circuitId;
+    public final String ephemeralKey;
 
     @Override
     public byte[] toBytes() {
         return (circuitId + "|" + ephemeralKey).getBytes();
     }
 
-    @Override
-    public void fromBytes(byte[] bytes) {
+    public static CircuitCreatePayload fromBytes(byte[] bytes) {
         String raw = new String(bytes);
         String[] parts = raw.split("\\|", 2);
 
         if (parts.length == 2) {
-            this.circuitId = UUID.fromString(parts[0]);
-            this.ephemeralKey = parts[1];
+            UUID id = UUID.fromString(parts[0]);
+            String ephKey = parts[1];
+            return new CircuitCreatePayload(id, ephKey);
         }
+
+        return null;
     }
 }
