@@ -10,9 +10,13 @@ import java.util.UUID;
 @Getter
 @AllArgsConstructor
 public class CircuitExtendRequestPayload extends MessagePayload {
-    private final UUID circuitId;
-    private final PeerInfo peerInfo;
-    private final String ephemeralKey;
+    private UUID circuitId;
+    private PeerInfo peerInfo;
+    private String ephemeralKey;
+
+    public CircuitExtendRequestPayload(byte[] bytes) {
+        this.fromBytes(bytes);
+    }
 
     @Override
     public byte[] toBytes() {
@@ -37,24 +41,23 @@ public class CircuitExtendRequestPayload extends MessagePayload {
         return buffer.array();
     }
 
-    public static CircuitExtendRequestPayload fromBytes(byte[] data) {
+    @Override
+    public void fromBytes(byte[] data) {
         ByteBuffer buffer = ByteBuffer.wrap(data);
 
         int uuidLength = buffer.getInt();
         byte[] uuidBytes = new byte[uuidLength];
         buffer.get(uuidBytes);
-        UUID id = UUID.fromString(new String(uuidBytes));
+        this.circuitId = UUID.fromString(new String(uuidBytes));
 
         int peerLength = buffer.getInt();
         byte[] peerBytes = new byte[peerLength];
         buffer.get(peerBytes);
-        PeerInfo peer = PeerInfo.deserialize(new String(peerBytes));
+        this.peerInfo = PeerInfo.deserialize(new String(peerBytes));
 
         int ephLength = buffer.getInt();
         byte[] ephBytes = new byte[ephLength];
         buffer.get(ephBytes);
-        String eph = new String(ephBytes);
-
-        return new CircuitExtendRequestPayload(id, peer, eph);
+        this.ephemeralKey = new String(ephBytes);
     }
 }

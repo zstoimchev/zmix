@@ -85,7 +85,7 @@ public class MessageSerializer {
 
             case HANDSHAKE -> {
                 byte[] data = java.util.Base64.getDecoder().decode(rawPayload);
-                return HandshakePayload.fromBytes(data);
+                return new HandshakePayload(data);
             }
 
             case PEER_DISCOVERY_REQUEST -> {
@@ -94,22 +94,22 @@ public class MessageSerializer {
 
             case PEER_DISCOVERY_RESPONSE -> {
                 byte[] data = java.util.Base64.getDecoder().decode(rawPayload);
-                return PeerResponsePayload.fromBytes(data);
+                return new PeerResponsePayload(data);
             }
 
             case CIRCUIT_CREATE_REQUEST, CIRCUIT_CREATE_RESPONSE -> {
                 byte[] data = java.util.Base64.getDecoder().decode(rawPayload);
-                return CircuitCreatePayload.fromBytes(data);
+                return new CircuitCreatePayload(data);
             }
 
             case CIRCUIT_EXTEND_REQUEST, CIRCUIT_EXTEND_RESPONSE -> {
                 byte[] data = java.util.Base64.getDecoder().decode(rawPayload);
-                return CircuitExtendPayloadEncrypted.fromBytes(data);
+                return new CircuitExtendPayloadEncrypted(data);
             }
 
             case DATA_TRANSFER_REQUEST, DATA_TRANSFER_RESPONSE -> {
                 byte[] data = java.util.Base64.getDecoder().decode(rawPayload);
-                return CircuitDataPayload.fromBytes(data);
+                return new CircuitDataPayload(data);
             }
 
             default -> throw new CustomException("Unexpected value: " + messageType, null);

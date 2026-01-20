@@ -4,6 +4,7 @@ import dev.models.PeerInfo;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -11,7 +12,11 @@ import java.util.stream.Collectors;
 @Getter
 @AllArgsConstructor
 public class PeerResponsePayload extends MessagePayload {
-    private final List<PeerInfo> peerList;
+    private List<PeerInfo> peerList;
+
+    public PeerResponsePayload(byte[] bytes) {
+        fromBytes(bytes);
+    }
 
     @Override
     public byte[] toBytes() {
@@ -23,14 +28,14 @@ public class PeerResponsePayload extends MessagePayload {
         return joined.getBytes();
     }
 
-    public static PeerResponsePayload fromBytes(byte[] bytes) {
-        if (bytes.length == 0) return new PeerResponsePayload(List.of());
+    @Override
+    public void fromBytes(byte[] bytes) {
+        if (bytes.length == 0) this.peerList = new ArrayList<>();
 
         String raw = new String(bytes);
-        List<PeerInfo> peers = Arrays
+        this.peerList = Arrays
                 .stream(raw.split("\\|"))
                 .map(PeerInfo::deserialize)
                 .toList();
-        return new PeerResponsePayload(peers);
     }
 }

@@ -9,8 +9,12 @@ import java.util.UUID;
 @Getter
 @AllArgsConstructor
 public class CircuitExtendPayloadEncrypted extends MessagePayload{
-    private final UUID circuitId;
-    private final byte[] encryptedData;
+    private UUID circuitId;
+    private byte[] encryptedData;
+
+    public CircuitExtendPayloadEncrypted(byte[] bytes) {
+        fromBytes(bytes);
+    }
 
     @Override
     public byte[] toBytes() {
@@ -24,14 +28,15 @@ public class CircuitExtendPayloadEncrypted extends MessagePayload{
         return buffer.array();
     }
 
-    public static CircuitExtendPayloadEncrypted fromBytes(byte[] bytes) {
+    @Override
+    public void fromBytes(byte[] bytes) {
         ByteBuffer buffer = ByteBuffer.wrap(bytes);
         int circuitIdLength = buffer.getInt();
         byte[] circuitIdBytes = new byte[circuitIdLength];
         buffer.get(circuitIdBytes);
-        UUID circuitId = UUID.fromString(new String(circuitIdBytes));
+        this.circuitId = UUID.fromString(new String(circuitIdBytes));
         byte[] encryptedData = new byte[buffer.remaining()];
         buffer.get(encryptedData);
-        return new CircuitExtendPayloadEncrypted(circuitId, encryptedData);
+        this.encryptedData = encryptedData;
     }
 }

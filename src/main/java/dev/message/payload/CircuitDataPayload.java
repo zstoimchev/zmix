@@ -15,6 +15,10 @@ public class CircuitDataPayload extends MessagePayload {
     public String port;
     public byte[] data;
 
+    public CircuitDataPayload(byte[] bytes) {
+        this.fromBytes(bytes);
+    }
+
     @Override
     public byte[] toBytes() {
         String serialized = this.circuitId + "|" + this.host + "|" + this.port + "|";
@@ -29,8 +33,8 @@ public class CircuitDataPayload extends MessagePayload {
         return buffer.array();
     }
 
-    // GPT explained why standard parsing will fail and why data length is needed
-    public static CircuitDataPayload fromBytes(byte[] bytes) {
+    @Override
+    public void fromBytes(byte[] bytes) {
         ByteBuffer buffer = ByteBuffer.wrap(bytes);
 
         int metadataLength = buffer.getInt();
@@ -40,13 +44,12 @@ public class CircuitDataPayload extends MessagePayload {
         String serialized = new String(metadataBytes, StandardCharsets.UTF_8);
         String[] parts = serialized.split("\\|", 4);
 
-        UUID id = UUID.fromString(parts[0]);
-        String host = parts[1];
-        String port = parts[2];
+        this.circuitId = UUID.fromString(parts[0]);
+        this.host = parts[1];
+        this.port = parts[2];
 
         byte[] data = new byte[buffer.remaining()];
         buffer.get(data);
-
-        return new CircuitDataPayload(id, host, port, data);
+        this.data = data;
     }
 }
