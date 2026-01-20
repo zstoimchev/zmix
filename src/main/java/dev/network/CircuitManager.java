@@ -14,6 +14,7 @@ import dev.utils.Logger;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import javax.net.ssl.SSLSocketFactory;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -281,7 +282,8 @@ public class CircuitManager {
 
         URI uri = URI.create(input);
         String host = uri.getHost();
-        logger.debug("the host is {}", host);
+        String scheme = uri.getScheme() != null ? uri.getScheme() : "http";
+        String port = scheme.equalsIgnoreCase("https") ? "443" : "80";
 //        String path = uri.getRawPath();
 //        if (path == null || path.isEmpty()) path = "/";                 // todo
 //        if (uri.getRawQuery() != null) path += "?" + uri.getRawQuery(); // todo
@@ -297,7 +299,7 @@ public class CircuitManager {
         Message dataMessage = MessageBuilder.buildDataTransferMessageRequest(
                 this.getMyCircuitId(),
                 host,
-                "80",
+                port,
                 encryptedRequest
         );
 
@@ -342,17 +344,27 @@ public class CircuitManager {
     }
 
     private byte[] sendAsExitNode(String host, String port, byte[] httpRequestData) throws IOException {
-        Socket s = new Socket(InetAddress.getByName(host), Integer.parseInt(port));
+        int portNum = Integer.parseInt(port);
+        Socket socket;
 
-        s.getOutputStream().write(httpRequestData);
-        s.getOutputStream().flush();
+        if (portNum == 443) {
+            SSLSocketFactory factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+            socket = factory.createSocket(host, portNum);
+            logger.debug("Created SSL socket to {}:{}", host, portNum);
+        } else {
+            socket = new Socket(InetAddress.getByName(host), portNum);
+            logger.debug("Created plain socket to {}:{}", host, portNum);
+        }
+
+        socket.getOutputStream().write(httpRequestData);
+        socket.getOutputStream().flush();
 
         StringBuilder response = new StringBuilder();
-        BufferedReader br = new BufferedReader(new InputStreamReader(s.getInputStream()));
+        BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         String line;
         while((line = br.readLine()) != null) response.append(line).append("\r\n");
         br.close();
-        s.close();
+        socket.close();
         return response.toString().getBytes(StandardCharsets.UTF_8);
     }
 
