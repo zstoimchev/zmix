@@ -3,15 +3,21 @@ package dev.message;
 import dev.message.payload.*;
 import dev.models.enums.MessageType;
 import dev.models.Message;
-import dev.utils.CustomException;
+import dev.exceptions.IllegalValueException;
+import dev.exceptions.SerializationException;
 
 import java.util.regex.Pattern;
+
+import static java.util.Base64.getEncoder;
 
 public class MessageSerializer {
     private static final String delimiter = ";delim;;;;";
 
     public static String serialize(Message message) {
-        return message.getMessageType() + delimiter + message.getTimestamp() + delimiter + message.getMessageId() + delimiter + serializePayload(message.getMessageType(), message.getPayload());
+        return message.getMessageType() + delimiter +
+                message.getTimestamp() + delimiter +
+                message.getMessageId() + delimiter +
+                serializePayload(message.getMessageType(), message.getPayload());
     }
 
     private static String serializePayload(MessageType messageType, MessagePayload payload) {
@@ -19,10 +25,10 @@ public class MessageSerializer {
 
             case HANDSHAKE -> {
                 if (!(payload instanceof HandshakePayload hp))
-                    throw new CustomException("Expected HandshakePayload", null);
+                    throw new SerializationException(messageType, HandshakePayload.class, payload);
 
                 byte[] bytes = hp.toBytes();
-                return java.util.Base64.getEncoder().encodeToString(bytes);
+                return getEncoder().encodeToString(bytes);
             }
 
             case PEER_DISCOVERY_REQUEST -> {
@@ -31,37 +37,37 @@ public class MessageSerializer {
 
             case PEER_DISCOVERY_RESPONSE -> {
                 if (!(payload instanceof PeerResponsePayload prp))
-                    throw new CustomException("Expected PeerResponsePayload", null);
+                    throw new SerializationException(messageType, PeerResponsePayload.class, payload);
 
                 byte[] bytes = prp.toBytes();
-                return java.util.Base64.getEncoder().encodeToString(bytes);
+                return getEncoder().encodeToString(bytes);
             }
 
             case CIRCUIT_CREATE_REQUEST, CIRCUIT_CREATE_RESPONSE -> {
                 if (!(payload instanceof CircuitCreatePayload ccr))
-                    throw new CustomException("Expected CircuitCreatePayload", null);
+                    throw new SerializationException(messageType, CircuitCreatePayload.class, payload);
 
                 byte[] bytes = ccr.toBytes();
-                return java.util.Base64.getEncoder().encodeToString(bytes);
+                return getEncoder().encodeToString(bytes);
             }
 
             case CIRCUIT_EXTEND_REQUEST, CIRCUIT_EXTEND_RESPONSE -> {
                 if (!(payload instanceof CircuitExtendPayloadEncrypted cer))
-                    throw new CustomException("Expected CircuitExtendEncryptedPayload", null);
+                    throw new SerializationException(messageType, CircuitExtendPayloadEncrypted.class, payload);
 
                 byte[] bytes = cer.toBytes();
-                return java.util.Base64.getEncoder().encodeToString(bytes);
+                return getEncoder().encodeToString(bytes);
             }
 
             case DATA_TRANSFER_REQUEST, DATA_TRANSFER_RESPONSE -> {
                 if (!(payload instanceof CircuitDataPayload cdp))
-                    throw new CustomException("Expected DataTransferPayload", null);
+                    throw new SerializationException(messageType, CircuitDataPayload.class, payload);
 
                 byte[] bytes = cdp.toBytes();
-                return java.util.Base64.getEncoder().encodeToString(bytes);
+                return getEncoder().encodeToString(bytes);
             }
 
-            default -> throw new CustomException("Unexpected value: " + payload, null);
+            default -> throw new IllegalValueException("Unexpected MessageType: " + messageType);
         }
     }
 
@@ -112,7 +118,7 @@ public class MessageSerializer {
                 return CircuitDataPayload.fromBytes(data);
             }
 
-            default -> throw new CustomException("Unexpected value: " + messageType, null);
+            default -> throw new IllegalValueException("Unexpected MessageType: " + messageType);
         }
     }
 }
