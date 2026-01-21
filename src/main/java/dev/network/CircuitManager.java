@@ -15,9 +15,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import javax.net.ssl.SSLSocketFactory;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.URI;
@@ -388,9 +386,29 @@ public class CircuitManager {
         byte[] decrypted = decryptResponse(payload.getData());
         String response = new String(decrypted, StandardCharsets.UTF_8);
 
-        logger.info("============================== HTTP RESPONSE ==============================");
-        logger.info(response);
-        logger.info("===========================================================================");
+//        logger.info("============================== HTTP RESPONSE ==============================");
+//        logger.info(response);
+//        logger.info("===========================================================================");
+        saveHttpResponse(response);
+    }
+
+    private void saveHttpResponse(String response) {
+        try {
+            int bodyStart = response.indexOf("\r\n\r\n");
+            if (bodyStart == -1) bodyStart = response.indexOf("\n\n");
+
+            String html = (bodyStart != -1) ? response.substring(bodyStart + 4) : response;
+
+            String filename = "responses/" + System.nanoTime() + ".html";
+            try (PrintWriter out = new PrintWriter(filename)) {
+                out.println(html);
+            }
+
+            logger.info("Saved response to: {}", filename);
+
+        } catch (FileNotFoundException e) {
+            logger.error("Failed to save: {}", e.getMessage());
+        }
     }
 
     private byte[] encryptRequest(byte[] requestBytes) {
