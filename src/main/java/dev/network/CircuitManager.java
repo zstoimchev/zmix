@@ -392,6 +392,7 @@ public class CircuitManager {
         saveHttpResponse(response);
     }
 
+    // GPT help for determining the body start of the HTTP response
     private void saveHttpResponse(String response) {
         try {
             int bodyStart = response.indexOf("\r\n\r\n");
