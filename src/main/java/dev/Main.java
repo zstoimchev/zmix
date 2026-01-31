@@ -19,6 +19,7 @@ public class Main {
     private final MessageHandler messageHandler;
     private final InputHandler inputHandler;
 
+    // DI and registering all the configuration
     public Main(String arg) {
         this.logger = Logger.getLogger(Main.class);
         this.config = Config.load(arg);
@@ -26,7 +27,7 @@ public class Main {
         this.messageHandler = new MessageHandler(queue);
         ExecutorService executor = Executors.newCachedThreadPool();
         this.networkManager = new NetworkManager(config, messageHandler, queue, executor);
-        this.server = new Server(config, queue, networkManager);
+        this.server = new Server(config, queue, networkManager, executor);
         this.inputHandler = new InputHandler(networkManager.getCircuitManager());
     }
 

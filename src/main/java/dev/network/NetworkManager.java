@@ -75,6 +75,7 @@ public class NetworkManager {
                 config.getPeerDiscoveryInitialDelayInSeconds(),
                 config.getPeerDiscoveryDelayInSeconds(),
                 TimeUnit.SECONDS);
+//        circuitManager.init();
     }
 
     public void registerPeer(Peer peer) {
@@ -96,10 +97,6 @@ public class NetworkManager {
     public void unregisterPeer(Peer peer) {
         removeConnectedPeer(peer);
         logger.info("Unregistered peer: {}", peer.getPeerId());
-    }
-
-    public void submitPeer(Peer peer) {
-        peerExecutor.submit(peer);
     }
 
     public void startPeerMaintenance() {
@@ -124,6 +121,7 @@ public class NetworkManager {
 
     public void connectToPeer(String ip, int port) {
         try {
+            logger.info("--------------------------------------------------------- {}:{}", ip, port);
             Socket clientSocket = new Socket(ip, port);
             Peer newPeer = new Peer(clientSocket, queue, this, PeerDirection.OUTBOUND);
             peerExecutor.submit(newPeer);
