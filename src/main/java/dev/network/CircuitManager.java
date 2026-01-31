@@ -284,9 +284,6 @@ public class CircuitManager {
         String host = uri.getHost();
         String scheme = uri.getScheme() != null ? uri.getScheme() : "http";
         String port = scheme.equalsIgnoreCase("https") ? "443" : "80";
-//        String path = uri.getRawPath();
-//        if (path == null || path.isEmpty()) path = "/";                 // todo
-//        if (uri.getRawQuery() != null) path += "?" + uri.getRawQuery(); // todo
 
         String http =   "GET / HTTP/1.1\r\n" +
                         "Host: " + host + "\r\n" +

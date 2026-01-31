@@ -9,21 +9,18 @@ import java.io.IOException;
 import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.concurrent.ExecutorService;
 
 public class Server extends Thread {
     private final Logger logger;
-    private final ExecutorService peerExecutor;
     private final Config config;
     private final MessageQueue queue;
     private final NetworkManager networkManager;
 
-    public Server(Config config, MessageQueue queue, NetworkManager networkManager, ExecutorService peerExecutor) {
+    public Server(Config config, MessageQueue queue, NetworkManager networkManager) {
         this.setName("Server");
 
         this.logger = Logger.getLogger(this.getClass());
         this.config = config;
-        this.peerExecutor = peerExecutor;
         this.queue = queue;
         this.networkManager = networkManager;
     }
@@ -40,7 +37,7 @@ public class Server extends Thread {
                 logger.info("  -> Remote IP:   " + clientSocket.getInetAddress().getHostAddress());
                 logger.info("  -> Remote Port: " + clientSocket.getPort());
                 logger.info("===============================");
-                peerExecutor.submit(new Peer(clientSocket, queue, networkManager, PeerDirection.INBOUND));
+                networkManager.submitPeer(new Peer(clientSocket, queue, networkManager, PeerDirection.INBOUND));
             }
         } catch (BindException e) {
             logger.error("Port " + config.getNodePort() + " is already in use.", e);
@@ -57,7 +54,7 @@ public class Server extends Thread {
         try {
             Socket socket = new Socket(config.getBootstrapNodeHost(), config.getBootstrapNodePort());
             logger.info("Connected to bootstrap node: " + socket.getRemoteSocketAddress());
-            peerExecutor.submit(new Peer(socket, queue, networkManager, PeerDirection.OUTBOUND));
+            networkManager.submitPeer(new Peer(socket, queue, networkManager, PeerDirection.OUTBOUND));
         } catch (IOException e) {
             logger.error("Could not connect to Bootstrap Node. Continuing on my own...", e);
         }
@@ -65,7 +62,7 @@ public class Server extends Thread {
 
     public void shutdown() {
         this.interrupt();
-        peerExecutor.shutdownNow();
+        networkManager.getPeerExecutor().shutdown();
         logger.info("Server stopped.");
     }
 }
