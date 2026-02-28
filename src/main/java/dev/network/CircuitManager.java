@@ -66,7 +66,7 @@ public class CircuitManager {
         }
 
         if (this.circuitType == CircuitStatus.PENDING) {
-            logger.warn("Circuit is already being prepared. Wait a bit...");
+            logger.warn("The circuit is already being prepared. Please wait a bit...");
             return;
         }
 
@@ -83,8 +83,10 @@ public class CircuitManager {
 
         availablePeers.removeIf(peer -> peer.getPublicKey().equals(networkManager.getEncodedPublicKey()));
 
-        if (availablePeers.size() < circuitLength)
+        if (availablePeers.size() < circuitLength) {
+            logger.error("Not enough connected peers to build circuit. Connected: {}, Required: {}", availablePeers.size(), circuitLength);
             throw new CustomException("Not enough peers for circuit. Have: " + availablePeers.size() + ", Need: " + circuitLength, null);
+        }
 
         Collections.shuffle(availablePeers);
         return availablePeers.subList(0, circuitLength);
@@ -120,7 +122,7 @@ public class CircuitManager {
                 if (peer != null) return peer;
                 attempts++;
             } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
+                logger.error("Thread was interrupted while waiting for peer connection.", e);
                 return null;
             }
         }
@@ -288,13 +290,13 @@ public class CircuitManager {
 //        if (path == null || path.isEmpty()) path = "/";                 // todo
 //        if (uri.getRawQuery() != null) path += "?" + uri.getRawQuery(); // todo
 
-        String http =   "GET / HTTP/1.1\r\n" +
-                        "Host: " + host + "\r\n" +
-                        "Connection: close\r\n" +
-                        "\r\n";
+        String http = "GET / HTTP/1.1\r\n" +
+                "Host: " + host + "\r\n" +
+                "Connection: close\r\n" +
+                "\r\n";
 
         byte[] requestBytes = http.getBytes(StandardCharsets.UTF_8);
-        byte[] encryptedRequest = encryptRequest(requestBytes);
+        byte[] encryptedRequest = encrypt(requestBytes);
 
         Message dataMessage = MessageBuilder.buildDataTransferMessageRequest(
                 this.getMyCircuitId(),
@@ -362,7 +364,7 @@ public class CircuitManager {
         StringBuilder response = new StringBuilder();
         BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         String line;
-        while((line = br.readLine()) != null) response.append(line).append("\r\n");
+        while ((line = br.readLine()) != null) response.append(line).append("\r\n");
         br.close();
         socket.close();
         return response.toString().getBytes(StandardCharsets.UTF_8);
@@ -385,7 +387,7 @@ public class CircuitManager {
             return;
         }
 
-        byte[] decrypted = decryptResponse(payload.getData());
+        byte[] decrypted = decrypt(payload.getData());
         String response = new String(decrypted, StandardCharsets.UTF_8);
 
         logger.info("============================== HTTP RESPONSE ==============================");
@@ -393,7 +395,7 @@ public class CircuitManager {
         logger.info("===========================================================================");
     }
 
-    private byte[] encryptRequest(byte[] requestBytes) {
+    private byte[] encrypt(byte[] requestBytes) {
         byte[] encrypted = requestBytes;
         for (int i = currentHop - 1; i >= 0; i--) {
             encrypted = crypto.encryptAES(encrypted, keys.get(i));
@@ -401,7 +403,7 @@ public class CircuitManager {
         return encrypted;
     }
 
-    private byte[] decryptResponse(byte[] responseBytes) {
+    private byte[] decrypt(byte[] responseBytes) {
         byte[] decrypted = responseBytes;
         for (int i = 0; i < currentHop; i++) {
             decrypted = crypto.decryptAES(decrypted, keys.get(i));
