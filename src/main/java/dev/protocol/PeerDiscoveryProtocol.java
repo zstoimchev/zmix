@@ -47,8 +47,6 @@ public class PeerDiscoveryProtocol implements Protocol {
     }
 
     private void handlePeerDiscoveryRequest(Peer peer, Message message) {
-        logger.info("Received peer request from: {}", peer.getPeerId());
-
         List<PeerInfo> peerList = networkManager.getKnownPeers();
         Message response = MessageBuilder.buildPeerResponseMessage(peerList);
         peer.send(response);
