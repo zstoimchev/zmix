@@ -163,10 +163,6 @@ public class Peer implements Runnable {
     }
 
     public void send(Message message) {
-//        if (message.getSignature() == null) {
-//            message = networkManager.getCrypto().signMessage(message);
-//        }
-
         try {
             synchronized (out) {
                 out.write(MessageSerializer.serialize(message) + "\n");
