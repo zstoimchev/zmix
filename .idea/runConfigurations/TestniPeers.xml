@@ -1,0 +1,8 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="TestniPeers" type="CompoundRunConfigurationType">
+    <toRun name="TestniPeer1" type="Application" />
+    <toRun name="TestniPeer2" type="Application" />
+    <toRun name="TestniPeer3" type="Application" />
+    <method v="2" />
+  </configuration>
+</component>
