@@ -88,6 +88,7 @@ public class Peer implements Runnable {
                         disconnect();
                         break;
                     }
+                    logger.info("Received message of type {} from peer {}", message.getMessageType(), this.peerId);
                     messageQueue.getQueue().add(new Event(this, message));
                 } catch (IOException e) {
                     logger.error("Could not read message from peer: " + e.getMessage(), e);
@@ -124,7 +125,6 @@ public class Peer implements Runnable {
     private void sendHandshake() {
         Message handshakeMessage = MessageBuilder.buildHandshakeMessage(networkManager.getEncodedPublicKey(), networkManager.getPort());
         this.send(handshakeMessage);
-        logger.info("Sent handshake to {}:{}", getIp(), getPort());
     }
 
     private boolean waitForHandshakeResponse() throws Exception {
@@ -158,7 +158,7 @@ public class Peer implements Runnable {
         this.port = handshakePayload.getPort();
 
         socket.setSoTimeout(0);
-        logger.info("Received handshake from {}", this.peerId);
+        logger.info("Received message of type {} from peer {}", message.getMessageType(), this.peerId);
         return true;
     }
 

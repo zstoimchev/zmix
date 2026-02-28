@@ -36,7 +36,6 @@ public class Main {
     }
 
     private void startNetwork() {
-        logger.info("Starting network on port: {}...", config.getNodePort());
         this.server.start();
         this.messageHandler.start();
         this.networkManager.start();
