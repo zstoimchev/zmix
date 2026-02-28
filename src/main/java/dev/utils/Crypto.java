@@ -1,12 +1,9 @@
 package dev.utils;
 
-import dev.models.Message;
-
 import javax.crypto.*;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.spec.*;
 import java.util.Arrays;
@@ -33,37 +30,6 @@ public class Crypto {
         }
     }
 
-    // ==================== SIGNING ====================
-
-    public Message signMessage(Message message) {
-        try {
-            Signature ecdsaSign = Signature.getInstance("SHA256withECDSA");
-            ecdsaSign.initSign(pvt);
-            String payloadString = message.getPayload() == null ? "" : message.getPayload().toString();
-            ecdsaSign.update(payloadString.getBytes(StandardCharsets.UTF_8));
-            byte[] signature = ecdsaSign.sign();
-
-//            message.setSignature(Base64.getEncoder().encodeToString(signature));
-            return message;
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to sign message", e);
-        }
-    }
-
-    public static boolean verifyMessage(Message message) {
-        try {
-            Signature ecdsaVerify = Signature.getInstance("SHA256withECDSA");
-            ecdsaVerify.update(message.getPayload().toString().getBytes(StandardCharsets.UTF_8));
-//            return ecdsaVerify.verify(Base64.getDecoder().decode(message.getSignature()));
-            return false;
-
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to verify message", e);
-        }
-    }
-
-    // ==================== ECDH KEY AGREEMENT ====================
-
     /**
      * Generate a new ephemeral EC key pair for ECDH
      */
@@ -89,12 +55,6 @@ public class Crypto {
         }
     }
 
-    /**
-     * Perform ECDH to derive shared secret
-     * @param privateKey Our private key
-     * @param publicKey Their public key
-     * @return Shared secret bytes
-     */
     public byte[] performECDH(PrivateKey privateKey, PublicKey publicKey) {
         try {
             KeyAgreement keyAgreement = KeyAgreement.getInstance("ECDH");
@@ -106,11 +66,6 @@ public class Crypto {
         }
     }
 
-    /**
-     * Derive AES-256 key from shared secret using HKDF (simplified with SHA-256)
-     * @param sharedSecret Shared secret from ECDH
-     * @return 32-byte AES key
-     */
     public byte[] deriveAESKey(byte[] sharedSecret) {
         try {
             // Use SHA-256 as a simple KDF
@@ -125,14 +80,6 @@ public class Crypto {
         }
     }
 
-    // ==================== AES ENCRYPTION/DECRYPTION ====================
-
-    /**
-     * Encrypt data using AES-256-GCM
-     * @param plaintext Data to encrypt
-     * @param key 32-byte AES key
-     * @return Encrypted data (IV + ciphertext + tag)
-     */
     public byte[] encryptAES(byte[] plaintext, byte[] key) {
         try {
             // Generate random IV
@@ -162,12 +109,6 @@ public class Crypto {
         }
     }
 
-    /**
-     * Decrypt data using AES-256-GCM
-     * @param encrypted Encrypted data (IV + ciphertext + tag)
-     * @param key 32-byte AES key
-     * @return Decrypted plaintext
-     */
     public byte[] decryptAES(byte[] encrypted, byte[] key) {
         try {
             // Extract IV and ciphertext
@@ -192,8 +133,6 @@ public class Crypto {
             throw new RuntimeException("Failed to decrypt with AES", e);
         }
     }
-
-    // ==================== GETTERS ====================
 
     public PublicKey getPublicKey() {
         return pub;
