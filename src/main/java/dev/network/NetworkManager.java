@@ -75,7 +75,6 @@ public class NetworkManager {
                 config.getPeerDiscoveryInitialDelayInSeconds(),
                 config.getPeerDiscoveryDelayInSeconds(),
                 TimeUnit.SECONDS);
-//        circuitManager.init();
     }
 
     public void registerPeer(Peer peer) {
@@ -111,7 +110,7 @@ public class NetworkManager {
 
         Collections.shuffle(candidates);
 
-        logger.debug("   >->   Connected: {}, Known: {}, Candidates: {}   <-<\n", getConnectedPeers().size(), getKnownPeers().size(), candidates.size());
+        logger.info("   >-->   Connected: {}, Known: {}, Candidates: {}   <--<", getConnectedPeers().size(), getKnownPeers().size(), candidates.size());
 
         for (PeerInfo info : candidates) {
             if (connectedPeers.size() > config.getMinConnections()) break;
@@ -121,7 +120,6 @@ public class NetworkManager {
 
     public void connectToPeer(String ip, int port) {
         try {
-            logger.info("--------------------------------------------------------- {}:{}", ip, port);
             Socket clientSocket = new Socket(ip, port);
             Peer newPeer = new Peer(clientSocket, queue, this, PeerDirection.OUTBOUND);
             peerExecutor.submit(newPeer);
