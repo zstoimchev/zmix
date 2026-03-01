@@ -15,9 +15,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import javax.net.ssl.SSLSocketFactory;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.URI;
@@ -390,8 +388,46 @@ public class CircuitManager {
         byte[] decrypted = decrypt(payload.getData());
         String response = new String(decrypted, StandardCharsets.UTF_8);
 
-        // TODO: log that the response was saved in x.html file
-        logger.info("Received response saved in file: TODO");
+        saveHttpResponseNaive(response);
+    }
+
+    private void saveHttpResponse(String response) {
+        try {
+            int bodyStart = response.indexOf("\r\n\r\n");
+            if (bodyStart == -1) bodyStart = response.indexOf("\n\n");
+
+            String html = (bodyStart != -1) ? response.substring(bodyStart + 4) : response;
+
+            String filename = "responses/" + System.nanoTime() + ".html";
+            try (PrintWriter out = new PrintWriter(filename)) {
+                out.println(html);
+            }
+
+            logger.info("Saved response to: {}", filename);
+
+        } catch (FileNotFoundException e) {
+            logger.error("Failed to save: {}", e.getMessage());
+        }
+    }
+
+    private void saveHttpResponseNaive(String response) {
+        try {
+            String html = extractHtml(response);
+            String filename = "responses/" + System.nanoTime() + ".html";
+            try (PrintWriter out = new PrintWriter(filename)) {
+                out.println(html);
+            }
+            logger.info("Response saved in file: {}", filename);
+        } catch (FileNotFoundException e) {
+            logger.error("Failed to save: {}", e.getMessage());
+        }
+    }
+
+    private String extractHtml(String response) {
+        String lowercaseResponse = response.toLowerCase();
+        int start = lowercaseResponse.indexOf("<!doctype html");
+        if (start == -1) start = lowercaseResponse.indexOf("<html");
+        return (start != -1) ? response.substring(start) : response;
     }
 
     private byte[] encrypt(byte[] requestBytes) {
