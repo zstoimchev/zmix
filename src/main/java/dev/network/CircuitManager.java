@@ -390,9 +390,8 @@ public class CircuitManager {
         byte[] decrypted = decrypt(payload.getData());
         String response = new String(decrypted, StandardCharsets.UTF_8);
 
-        logger.info("============================== HTTP RESPONSE ==============================");
-        logger.info(response);
-        logger.info("===========================================================================");
+        // TODO: log that the response was saved in x.html file
+        logger.info("Received response saved in file: TODO");
     }
 
     private byte[] encrypt(byte[] requestBytes) {
