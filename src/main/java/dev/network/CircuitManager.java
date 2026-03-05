@@ -23,8 +23,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.PublicKey;
 import java.util.*;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.*;
 
 public class CircuitManager {
     private final Logger logger;
@@ -32,6 +31,8 @@ public class CircuitManager {
     private final ScheduledExecutorService circuitExecutor;
     private final Crypto crypto;
     private final int circuitLength;
+    private final BlockingDeque<String> requestQueue;
+    private final ExecutorService requestExecutor;
 
     @Getter
     private UUID myCircuitId;
@@ -54,6 +55,8 @@ public class CircuitManager {
         this.keys = new HashMap<>();
         this.pendingKeys = new HashMap<>();
         this.relayCircuits = new HashMap<>();
+        this.requestQueue = new LinkedBlockingDeque<>();
+        this.requestExecutor = Executors.newSingleThreadExecutor();
     }
 
     public void init() {
@@ -178,6 +181,7 @@ public class CircuitManager {
         } else {
             circuitType = CircuitStatus.ACTIVE;
             logger.info("Circuit {} fully established with {} hops!", myCircuitId, circuitLength);
+            requestExecutor.submit(this::processRequestsFromQueue);
         }
     }
 
@@ -274,19 +278,14 @@ public class CircuitManager {
     }
 
     public void sendRequest(String input) {
-        if (!this.isCircuitReady()) {
-            logger.warn("No active circuit. Please try again in short.");
-            this.init();
-            return; // TODO: returning immediately. Maybe queue the request?
-        }
+        this.requestQueue.add(input);
+    }
 
+    public void processRequest(String input) {
         URI uri = URI.create(input);
         String host = uri.getHost();
         String scheme = uri.getScheme() != null ? uri.getScheme() : "http";
         String port = scheme.equalsIgnoreCase("https") ? "443" : "80";
-//        String path = uri.getRawPath();
-//        if (path == null || path.isEmpty()) path = "/";                 // todo
-//        if (uri.getRawQuery() != null) path += "?" + uri.getRawQuery(); // todo
 
         String http = "GET / HTTP/1.1\r\n" +
                 "Host: " + host + "\r\n" +
@@ -304,6 +303,19 @@ public class CircuitManager {
         );
 
         send(dataMessage);
+    }
+
+    private void processRequestsFromQueue() {
+        while (true) {
+            try {
+                String input = requestQueue.take();
+                processRequest(input);
+            } catch (InterruptedException e) {
+                logger.error(e.getMessage());
+                Thread.currentThread().interrupt();
+                return;
+            }
+        }
     }
 
     public void onDataTransferRequest(Peer peer, Message message) {
