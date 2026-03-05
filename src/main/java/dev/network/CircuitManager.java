@@ -278,6 +278,7 @@ public class CircuitManager {
     }
 
     public void sendRequest(String input) {
+        if (!isCircuitReady()) this.init();
         this.requestQueue.add(input);
     }
 
