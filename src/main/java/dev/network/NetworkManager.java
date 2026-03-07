@@ -1,6 +1,7 @@
 package dev.network;
 
 import dev.message.MessageBuilder;
+import dev.models.MessageQueue;
 import dev.models.PeerInfo;
 import dev.models.enums.MessageType;
 import dev.models.enums.PeerDirection;
@@ -23,7 +24,7 @@ public class NetworkManager {
     private final Logger logger;
     private final UUID nodeId;
 
-    private AtomicBoolean isRunning = new AtomicBoolean(false);
+    private AtomicBoolean isRunning;
     private final ExecutorService peerExecutor;
     private final Config config;
 
@@ -51,6 +52,7 @@ public class NetworkManager {
         this.crypto = new Crypto();
         this.encodedPublicKey = Utils.encodeBytesToString(crypto.getPublicKey().getEncoded());
         this.queue = queue;
+        this.isRunning = new AtomicBoolean(false);
 
         this.connectedPeers = new ConcurrentHashMap<>();
         this.knownPeers = new ArrayList<>();

@@ -3,6 +3,7 @@ package dev.network;
 import dev.models.Event;
 import dev.models.Message;
 import dev.message.MessageBuilder;
+import dev.models.MessageQueue;
 import dev.models.enums.MessageType;
 import dev.message.payload.HandshakePayload;
 import dev.message.MessageSerializer;
@@ -147,6 +148,7 @@ public class Peer implements Runnable {
 
         if (!(message.getPayload() instanceof HandshakePayload handshakePayload)) return false;
 
+        this.publicKeyEncoded = handshakePayload.getPublicKeyEncoded();
         this.publicKey = Crypto.decodePublicKey(handshakePayload.getPublicKeyEncoded());
         this.port = handshakePayload.getPort();
 

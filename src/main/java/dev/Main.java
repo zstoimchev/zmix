@@ -1,6 +1,6 @@
 package dev;
 
-import dev.network.MessageQueue;
+import dev.models.MessageQueue;
 import dev.network.NetworkManager;
 import dev.network.Server;
 import dev.protocol.InputHandler;
