@@ -99,6 +99,7 @@ public class NetworkManager {
     }
 
     public void startPeerMaintenance() {
+        logger.info("   >-->   Connected: {} | Known: {}   <--<", getConnectedPeers().size(), getKnownPeers().size());
         if (getConnectedPeerCount() >= config.getMaxConnections()) return;
 
         List<PeerInfo> candidates = new ArrayList<>(knownPeers
@@ -109,8 +110,6 @@ public class NetworkManager {
                 .toList());
 
         Collections.shuffle(candidates);
-
-        logger.info("   >-->   Connected: {}, Known: {}, Candidates: {}   <--<", getConnectedPeers().size(), getKnownPeers().size(), candidates.size());
 
         for (PeerInfo info : candidates) {
             if (connectedPeers.size() > config.getMinConnections()) break;
