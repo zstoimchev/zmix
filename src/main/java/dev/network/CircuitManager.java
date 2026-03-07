@@ -408,7 +408,7 @@ public class CircuitManager {
 
     private void saveHttpResponseNaive(String response) {
         try {
-            String html = extractHtml(response);
+            String html = Utils.extractHtml(response);
             String filename = "responses/" + System.nanoTime() + ".html";
             try (PrintWriter out = new PrintWriter(filename)) {
                 out.println(html);
@@ -417,13 +417,6 @@ public class CircuitManager {
         } catch (FileNotFoundException e) {
             logger.error("Failed to save: {}", e.getMessage());
         }
-    }
-
-    private String extractHtml(String response) {
-        String lowercaseResponse = response.toLowerCase();
-        int start = lowercaseResponse.indexOf("<!doctype html");
-        if (start == -1) start = lowercaseResponse.indexOf("<html");
-        return (start != -1) ? response.substring(start) : response;
     }
 
     private byte[] encrypt(byte[] requestBytes) {

@@ -127,7 +127,7 @@ public class Peer implements Runnable {
     }
 
     private boolean waitForHandshakeResponse() throws Exception {
-        socket.setSoTimeout(5000);
+        socket.setSoTimeout(5 * 1000); // wait will block for 5 seconds
         String rawMessage = in.readLine();
 
         if (rawMessage == null) {
@@ -152,7 +152,7 @@ public class Peer implements Runnable {
         this.publicKey = Crypto.decodePublicKey(handshakePayload.getPublicKeyEncoded());
         this.port = handshakePayload.getPort();
 
-        socket.setSoTimeout(0);
+        socket.setSoTimeout(0); // reset blocking wait
         logger.info("Received message of type {} from peer {}", message.getMessageType(), this.peerId);
         return true;
     }

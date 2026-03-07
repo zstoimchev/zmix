@@ -15,4 +15,11 @@ public class Utils {
     public static String ppp() {
         return "e23e";
     }
+
+    public static String extractHtml(String response) {
+        String lowercaseResponse = response.toLowerCase();
+        int start = lowercaseResponse.indexOf("<!doctype html");
+        if (start == -1) start = lowercaseResponse.indexOf("<html");
+        return (start != -1) ? response.substring(start) : response;
+    }
 }
