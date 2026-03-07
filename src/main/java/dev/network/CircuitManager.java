@@ -270,6 +270,7 @@ public class CircuitManager {
         } else {
             circuitType = CircuitStatus.ACTIVE;
             logger.info("Circuit {} fully established with {} hops!", myCircuitId, circuitLength);
+            requestExecutor.submit(this::processRequestsFromQueue);
         }
     }
 
