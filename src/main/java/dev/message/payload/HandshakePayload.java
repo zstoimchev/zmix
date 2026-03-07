@@ -6,12 +6,12 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class HandshakePayload extends MessagePayload {
-    private final String publicKeyBase64Encoded; // Base64 encoded public key
+    private final String publicKeyEncoded;
     private final int port;
 
     @Override
     public byte[] toBytes() {
-        return (publicKeyBase64Encoded + ":" + port).getBytes();
+        return (publicKeyEncoded + ":" + port).getBytes();
     }
 
     public static HandshakePayload fromBytes(byte[] bytes) {

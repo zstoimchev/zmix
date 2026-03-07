@@ -7,16 +7,14 @@ import dev.models.enums.MessageType;
 import dev.message.payload.HandshakePayload;
 import dev.message.MessageSerializer;
 import dev.models.enums.PeerDirection;
+import dev.utils.Crypto;
 import dev.utils.CustomException;
 import dev.utils.Logger;
 import lombok.Getter;
 
 import java.io.*;
 import java.net.Socket;
-import java.security.KeyFactory;
 import java.security.PublicKey;
-import java.security.spec.X509EncodedKeySpec;
-import java.util.Base64;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -37,7 +35,7 @@ public class Peer implements Runnable {
 
     private PublicKey publicKey;
     @Getter
-    private String publicKeyBase64Encoded;
+    private String publicKeyEncoded;
 
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
 
@@ -149,12 +147,7 @@ public class Peer implements Runnable {
 
         if (!(message.getPayload() instanceof HandshakePayload handshakePayload)) return false;
 
-        // TODO: PEER CLASS SHOULD NOT DECODE THE PUBLIC KEY, MOVE THIS SOMEWHERE ELSE
-        publicKeyBase64Encoded = handshakePayload.getPublicKeyBase64Encoded();
-        byte[] publicKeyBytes = Base64.getDecoder().decode(publicKeyBase64Encoded);
-        X509EncodedKeySpec keySpec = new X509EncodedKeySpec(publicKeyBytes);
-        KeyFactory keyFactory = KeyFactory.getInstance("EC"); // TODO: Use config for algorithm
-        this.publicKey = keyFactory.generatePublic(keySpec);
+        this.publicKey = Crypto.decodePublicKey(handshakePayload.getPublicKeyEncoded());
         this.port = handshakePayload.getPort();
 
         socket.setSoTimeout(0);

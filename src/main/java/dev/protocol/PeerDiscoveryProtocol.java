@@ -79,7 +79,7 @@ public class PeerDiscoveryProtocol implements Protocol {
 
     private boolean isKnown(PeerInfo peerInfo) {
         boolean presentInKnown = networkManager.getKnownPeers().stream().anyMatch(p -> p.getPublicKey().equals(peerInfo.getPublicKey()));
-        boolean presentInConnected = networkManager.getConnectedPeers().values().stream().anyMatch(p -> p.getPublicKeyBase64Encoded().equals(peerInfo.getPublicKey()));
+        boolean presentInConnected = networkManager.getConnectedPeers().values().stream().anyMatch(p -> p.getPublicKeyEncoded().equals(peerInfo.getPublicKey()));
         return presentInKnown || presentInConnected;
     }
 

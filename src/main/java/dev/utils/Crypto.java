@@ -44,12 +44,12 @@ public class Crypto {
         }
     }
 
-    public PublicKey decodePublicKey(String base64) {
+    public static PublicKey decodePublicKey(String base64) {
         try {
-            byte[] bytes = Base64.getDecoder().decode(base64);
-            KeyFactory kf = KeyFactory.getInstance("EC");
-            X509EncodedKeySpec spec = new X509EncodedKeySpec(bytes);
-            return kf.generatePublic(spec);
+            byte[] bytes = Utils.decodeStringToBytes(base64);
+            KeyFactory keyFactory = KeyFactory.getInstance("EC");
+            X509EncodedKeySpec keySpec = new X509EncodedKeySpec(bytes);
+            return keyFactory.generatePublic(keySpec);
         } catch (Exception e) {
             throw new RuntimeException("Failed to decode EC public key", e);
         }

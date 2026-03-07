@@ -11,6 +11,7 @@ import dev.models.enums.CircuitStatus;
 import dev.utils.Crypto;
 import dev.utils.CustomException;
 import dev.utils.Logger;
+import dev.utils.Utils;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -105,7 +106,7 @@ public class CircuitManager {
         KeyPair eph = crypto.generateECDHKeyPair();
         pendingKeys.put(0, eph);
 
-        Message msg = MessageBuilder.buildCircuitCreateMessageRequest(myCircuitId, Base64.getEncoder().encodeToString(eph.getPublic().getEncoded()));
+        Message msg = MessageBuilder.buildCircuitCreateMessageRequest(myCircuitId, Utils.encodeBytesToString(eph.getPublic().getEncoded()));
         this.entryPeer.send(msg);
     }
 
@@ -135,15 +136,15 @@ public class CircuitManager {
         UUID circuitId = payload.getCircuitId();
 
         KeyPair ephemeralKeyPair = crypto.generateECDHKeyPair();
-        PublicKey theirEphemeralPublicKey = crypto.decodePublicKey(payload.getEphemeralKey());
+        PublicKey theirEphemeralPublicKey = Crypto.decodePublicKey(payload.getEphemeralKey());
 
         byte[] sharedSecret = crypto.performECDH(ephemeralKeyPair.getPrivate(), theirEphemeralPublicKey);
         byte[] sessionKey = crypto.deriveAESKey(sharedSecret);
 
         relayCircuits.put(circuitId, new RelayCircuit(peer, null, sessionKey));
 
-        String ourEphemeralKeyBase64 = Base64.getEncoder().encodeToString(ephemeralKeyPair.getPublic().getEncoded());
-        Message response = MessageBuilder.buildCircuitCreateMessageResponse(circuitId, ourEphemeralKeyBase64);
+        String myEphemeralKey = Utils.encodeBytesToString(ephemeralKeyPair.getPublic().getEncoded());
+        Message response = MessageBuilder.buildCircuitCreateMessageResponse(circuitId, myEphemeralKey);
 
         peer.send(response);
     }
@@ -167,7 +168,7 @@ public class CircuitManager {
         }
 
         KeyPair eph = pendingKeys.remove(0);
-        PublicKey theirPub = crypto.decodePublicKey(payload.getEphemeralKey());
+        PublicKey theirPub = Crypto.decodePublicKey(payload.getEphemeralKey());
 
         byte[] sharedSecret = crypto.performECDH(eph.getPrivate(), theirPub);
         byte[] sessionKey = crypto.deriveAESKey(sharedSecret);
@@ -195,7 +196,7 @@ public class CircuitManager {
         CircuitExtendRequestPayload payload = new CircuitExtendRequestPayload(
                 this.getMyCircuitId(),
                 nextHop,
-                Base64.getEncoder().encodeToString(eph.getPublic().getEncoded()));
+                Utils.encodeBytesToString(eph.getPublic().getEncoded()));
 
         byte[] encrypted = payload.toBytes();
         for (int i = hop - 1; i >= 0; i--) encrypted = crypto.encryptAES(encrypted, keys.get(i));
@@ -254,9 +255,9 @@ public class CircuitManager {
         byte[] data = payload.getEncryptedData();
         for (int i = 0; i < currentHop; i++) data = crypto.decryptAES(data, keys.get(i));
 
-        String ephemeralKeyBase64 = new String(data, StandardCharsets.UTF_8);
+        String ephemeralKey = new String(data, StandardCharsets.UTF_8);
         KeyPair eph = pendingKeys.remove(currentHop);
-        PublicKey hopPub = crypto.decodePublicKey(ephemeralKeyBase64);
+        PublicKey hopPub = Crypto.decodePublicKey(ephemeralKey);
 
         byte[] secret = crypto.performECDH(eph.getPrivate(), hopPub);
         byte[] sessionKey = crypto.deriveAESKey(secret);
