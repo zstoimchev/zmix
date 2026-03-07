@@ -405,25 +405,6 @@ public class CircuitManager {
         saveHttpResponseNaive(response);
     }
 
-    private void saveHttpResponse(String response) {
-        try {
-            int bodyStart = response.indexOf("\r\n\r\n");
-            if (bodyStart == -1) bodyStart = response.indexOf("\n\n");
-
-            String html = (bodyStart != -1) ? response.substring(bodyStart + 4) : response;
-
-            String filename = "responses/" + System.nanoTime() + ".html";
-            try (PrintWriter out = new PrintWriter(filename)) {
-                out.println(html);
-            }
-
-            logger.info("Saved response to: {}", filename);
-
-        } catch (FileNotFoundException e) {
-            logger.error("Failed to save: {}", e.getMessage());
-        }
-    }
-
     private void saveHttpResponseNaive(String response) {
         try {
             String html = extractHtml(response);
