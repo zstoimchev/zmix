@@ -1,6 +1,5 @@
-package dev.network;
+package dev.models;
 
-import dev.models.Event;
 import lombok.Getter;
 
 import java.util.concurrent.BlockingQueue;

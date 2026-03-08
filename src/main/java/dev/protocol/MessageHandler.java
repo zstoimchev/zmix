@@ -2,7 +2,7 @@ package dev.protocol;
 
 import dev.models.Event;
 import dev.models.Message;
-import dev.network.MessageQueue;
+import dev.models.MessageQueue;
 import dev.models.enums.MessageType;
 import dev.network.Peer;
 import dev.utils.Logger;

@@ -1,16 +1,14 @@
 package dev.network;
 
 import dev.message.MessageBuilder;
+import dev.models.MessageQueue;
 import dev.models.PeerInfo;
 import dev.models.enums.MessageType;
 import dev.models.enums.PeerDirection;
 import dev.protocol.CircuitProtocol;
 import dev.protocol.MessageHandler;
 import dev.protocol.PeerDiscoveryProtocol;
-import dev.utils.Config;
-import dev.utils.Crypto;
-import dev.utils.CustomException;
-import dev.utils.Logger;
+import dev.utils.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -26,7 +24,7 @@ public class NetworkManager {
     private final Logger logger;
     private final UUID nodeId;
 
-    private AtomicBoolean isRunning = new AtomicBoolean(false);
+    private AtomicBoolean isRunning;
     private final ExecutorService peerExecutor;
     private final Config config;
 
@@ -52,8 +50,9 @@ public class NetworkManager {
         this.peerExecutor = executor;
         this.config = config;
         this.crypto = new Crypto();
-        this.encodedPublicKey = Base64.getEncoder().encodeToString(crypto.getPublicKey().getEncoded());
+        this.encodedPublicKey = Utils.encodeBytesToString(crypto.getPublicKey().getEncoded());
         this.queue = queue;
+        this.isRunning = new AtomicBoolean(false);
 
         this.connectedPeers = new ConcurrentHashMap<>();
         this.knownPeers = new ArrayList<>();
@@ -78,8 +77,8 @@ public class NetworkManager {
     }
 
     public void registerPeer(Peer peer) {
-        if (getKnownPeers().stream().noneMatch(p -> p.getPublicKey().equals(peer.getPublicKeyBase64Encoded())))
-            addKnownPeer(new PeerInfo(peer.getPublicKeyBase64Encoded(), peer.getIp(), peer.getPort()));
+        if (getKnownPeers().stream().noneMatch(p -> p.getPublicKey().equals(peer.getPublicKeyEncoded())))
+            addKnownPeer(new PeerInfo(peer.getPublicKeyEncoded(), peer.getIp(), peer.getPort()));
 
         if (getConnectedPeerCount() >= config.getMaxConnections()) {
             logger.warn("Max peers reached. Cannot register new peer: {}", peer.getPeerId());
@@ -136,11 +135,11 @@ public class NetworkManager {
     }
 
     public synchronized void addConnectedPeer(Peer peer) {
-        connectedPeers.put(peer.getPublicKeyBase64Encoded(), peer);
+        connectedPeers.put(peer.getPublicKeyEncoded(), peer);
     }
 
     public synchronized void removeConnectedPeer(Peer peer) {
-        connectedPeers.remove(peer.getPublicKeyBase64Encoded());
+        connectedPeers.remove(peer.getPublicKeyEncoded());
     }
 
     public synchronized void addKnownPeer(PeerInfo peerInfo) {

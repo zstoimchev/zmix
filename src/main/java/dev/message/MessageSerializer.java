@@ -4,6 +4,7 @@ import dev.message.payload.*;
 import dev.models.enums.MessageType;
 import dev.models.Message;
 import dev.utils.CustomException;
+import dev.utils.Utils;
 
 import java.util.regex.Pattern;
 
@@ -22,7 +23,7 @@ public class MessageSerializer {
                     throw new CustomException("Expected HandshakePayload", null);
 
                 byte[] bytes = hp.toBytes();
-                return java.util.Base64.getEncoder().encodeToString(bytes);
+                return Utils.encodeBytesToString(bytes);
             }
 
             case PEER_DISCOVERY_REQUEST -> {
@@ -34,7 +35,7 @@ public class MessageSerializer {
                     throw new CustomException("Expected PeerResponsePayload", null);
 
                 byte[] bytes = prp.toBytes();
-                return java.util.Base64.getEncoder().encodeToString(bytes);
+                return Utils.encodeBytesToString(bytes);
             }
 
             case CIRCUIT_CREATE_REQUEST, CIRCUIT_CREATE_RESPONSE -> {
@@ -42,7 +43,7 @@ public class MessageSerializer {
                     throw new CustomException("Expected CircuitCreatePayload", null);
 
                 byte[] bytes = ccr.toBytes();
-                return java.util.Base64.getEncoder().encodeToString(bytes);
+                return Utils.encodeBytesToString(bytes);
             }
 
             case CIRCUIT_EXTEND_REQUEST, CIRCUIT_EXTEND_RESPONSE -> {
@@ -50,7 +51,7 @@ public class MessageSerializer {
                     throw new CustomException("Expected CircuitExtendEncryptedPayload", null);
 
                 byte[] bytes = cer.toBytes();
-                return java.util.Base64.getEncoder().encodeToString(bytes);
+                return Utils.encodeBytesToString(bytes);
             }
 
             case DATA_TRANSFER_REQUEST, DATA_TRANSFER_RESPONSE -> {
@@ -58,7 +59,7 @@ public class MessageSerializer {
                     throw new CustomException("Expected DataTransferPayload", null);
 
                 byte[] bytes = cdp.toBytes();
-                return java.util.Base64.getEncoder().encodeToString(bytes);
+                return Utils.encodeBytesToString(bytes);
             }
 
             default -> throw new CustomException("Unexpected value: " + payload, null);
@@ -80,39 +81,16 @@ public class MessageSerializer {
 
     private static MessagePayload deserializePayload(MessageType messageType, String rawPayload) {
         if (rawPayload == null || rawPayload.isEmpty()) return null;
+        byte[] data = Utils.decodeStringToBytes(rawPayload);
 
-        switch (messageType) {
-
-            case HANDSHAKE -> {
-                byte[] data = java.util.Base64.getDecoder().decode(rawPayload);
-                return HandshakePayload.fromBytes(data);
-            }
-
-            case PEER_DISCOVERY_REQUEST -> {
-                return null;
-            }
-
-            case PEER_DISCOVERY_RESPONSE -> {
-                byte[] data = java.util.Base64.getDecoder().decode(rawPayload);
-                return PeerResponsePayload.fromBytes(data);
-            }
-
-            case CIRCUIT_CREATE_REQUEST, CIRCUIT_CREATE_RESPONSE -> {
-                byte[] data = java.util.Base64.getDecoder().decode(rawPayload);
-                return CircuitCreatePayload.fromBytes(data);
-            }
-
-            case CIRCUIT_EXTEND_REQUEST, CIRCUIT_EXTEND_RESPONSE -> {
-                byte[] data = java.util.Base64.getDecoder().decode(rawPayload);
-                return CircuitExtendPayloadEncrypted.fromBytes(data);
-            }
-
-            case DATA_TRANSFER_REQUEST, DATA_TRANSFER_RESPONSE -> {
-                byte[] data = java.util.Base64.getDecoder().decode(rawPayload);
-                return CircuitDataPayload.fromBytes(data);
-            }
-
+        return switch (messageType) {
+            case HANDSHAKE -> HandshakePayload.fromBytes(data);
+            case PEER_DISCOVERY_REQUEST -> null;
+            case PEER_DISCOVERY_RESPONSE -> PeerResponsePayload.fromBytes(data);
+            case CIRCUIT_CREATE_REQUEST, CIRCUIT_CREATE_RESPONSE -> CircuitCreatePayload.fromBytes(data);
+            case CIRCUIT_EXTEND_REQUEST, CIRCUIT_EXTEND_RESPONSE -> CircuitExtendPayloadEncrypted.fromBytes(data);
+            case DATA_TRANSFER_REQUEST, DATA_TRANSFER_RESPONSE -> CircuitDataPayload.fromBytes(data);
             default -> throw new CustomException("Unexpected value: " + messageType, null);
-        }
+        };
     }
 }

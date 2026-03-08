@@ -3,20 +3,19 @@ package dev.network;
 import dev.models.Event;
 import dev.models.Message;
 import dev.message.MessageBuilder;
+import dev.models.MessageQueue;
 import dev.models.enums.MessageType;
 import dev.message.payload.HandshakePayload;
 import dev.message.MessageSerializer;
 import dev.models.enums.PeerDirection;
+import dev.utils.Crypto;
 import dev.utils.CustomException;
 import dev.utils.Logger;
 import lombok.Getter;
 
 import java.io.*;
 import java.net.Socket;
-import java.security.KeyFactory;
 import java.security.PublicKey;
-import java.security.spec.X509EncodedKeySpec;
-import java.util.Base64;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -37,7 +36,7 @@ public class Peer implements Runnable {
 
     private PublicKey publicKey;
     @Getter
-    private String publicKeyBase64Encoded;
+    private String publicKeyEncoded;
 
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
 
@@ -77,7 +76,7 @@ public class Peer implements Runnable {
             networkManager.registerPeer(this);
 
             if (peerDirection == PeerDirection.OUTBOUND)
-                networkManager.getPeerDiscoveryProtocol().requestPeers(this); // TODO: remove reference to PeerDiscoveryProtocol
+                networkManager.getPeerDiscoveryProtocol().requestPeers(this);
 
             this.isRunning.set(true);
 
@@ -128,7 +127,7 @@ public class Peer implements Runnable {
     }
 
     private boolean waitForHandshakeResponse() throws Exception {
-        socket.setSoTimeout(5000);
+        socket.setSoTimeout(5 * 1000); // wait will block for 5 seconds
         String rawMessage = in.readLine();
 
         if (rawMessage == null) {
@@ -148,17 +147,13 @@ public class Peer implements Runnable {
         }
 
         if (!(message.getPayload() instanceof HandshakePayload handshakePayload)) return false;
+        logger.info("Received message of type {} from peer {}", message.getMessageType(), this.peerId);
 
-        // TODO: PEER CLASS SHOULD NOT DECODE THE PUBLIC KEY, MOVE THIS SOMEWHERE ELSE
-        publicKeyBase64Encoded = handshakePayload.getPublicKeyBase64Encoded();
-        byte[] publicKeyBytes = Base64.getDecoder().decode(publicKeyBase64Encoded);
-        X509EncodedKeySpec keySpec = new X509EncodedKeySpec(publicKeyBytes);
-        KeyFactory keyFactory = KeyFactory.getInstance("EC"); // TODO: Use config for algorithm
-        this.publicKey = keyFactory.generatePublic(keySpec);
+        this.publicKeyEncoded = handshakePayload.getPublicKeyEncoded();
+        this.publicKey = Crypto.decodePublicKey(handshakePayload.getPublicKeyEncoded());
         this.port = handshakePayload.getPort();
 
-        socket.setSoTimeout(0);
-        logger.info("Received message of type {} from peer {}", message.getMessageType(), this.peerId);
+        socket.setSoTimeout(0); // reset blocking wait
         return true;
     }
 
