@@ -403,19 +403,12 @@ public class CircuitManager {
         byte[] decrypted = decrypt(payload.getData());
         String response = new String(decrypted, StandardCharsets.UTF_8);
 
-        saveHttpResponseNaive(response);
-    }
-
-    private void saveHttpResponseNaive(String response) {
         try {
-            String html = Utils.extractHtml(response);
-            String filename = "responses/" + System.nanoTime() + ".html";
-            try (PrintWriter out = new PrintWriter(filename)) {
-                out.println(html);
-            }
-            logger.info("Response saved in file: {}", filename);
+            String fileName = Utils.saveHttpResponseNaive(response);
+            logger.info("Saved HTTP response to file: {}", fileName);
         } catch (FileNotFoundException e) {
-            logger.error("Failed to save: {}", e.getMessage());
+            logger.error("Failed to save HTTP response to file", e);
+            throw new RuntimeException(e);
         }
     }
 

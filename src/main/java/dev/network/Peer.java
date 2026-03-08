@@ -76,7 +76,7 @@ public class Peer implements Runnable {
             networkManager.registerPeer(this);
 
             if (peerDirection == PeerDirection.OUTBOUND)
-                networkManager.getPeerDiscoveryProtocol().requestPeers(this); // TODO: remove reference to PeerDiscoveryProtocol
+                networkManager.getPeerDiscoveryProtocol().requestPeers(this);
 
             this.isRunning.set(true);
 
@@ -147,13 +147,13 @@ public class Peer implements Runnable {
         }
 
         if (!(message.getPayload() instanceof HandshakePayload handshakePayload)) return false;
+        logger.info("Received message of type {} from peer {}", message.getMessageType(), this.peerId);
 
         this.publicKeyEncoded = handshakePayload.getPublicKeyEncoded();
         this.publicKey = Crypto.decodePublicKey(handshakePayload.getPublicKeyEncoded());
         this.port = handshakePayload.getPort();
 
         socket.setSoTimeout(0); // reset blocking wait
-        logger.info("Received message of type {} from peer {}", message.getMessageType(), this.peerId);
         return true;
     }
 
