@@ -1,5 +1,5 @@
-package dev.network;
+package dev.models;
 
-import dev.models.Message;
+import dev.network.Peer;
 
 public record Event(Peer sender, Message message) {}

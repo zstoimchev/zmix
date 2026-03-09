@@ -1,11 +1,11 @@
 package dev;
 
-import dev.network.MessageQueue;
+import dev.models.MessageQueue;
 import dev.network.NetworkManager;
 import dev.network.Server;
+import dev.protocol.InputHandler;
 import dev.protocol.MessageHandler;
 import dev.utils.Config;
-import dev.utils.CustomException;
 import dev.utils.Logger;
 
 import java.util.concurrent.ExecutorService;
@@ -17,6 +17,7 @@ public class Main {
     private final Server server;
     private final NetworkManager networkManager;
     private final MessageHandler messageHandler;
+    private final InputHandler inputHandler;
 
     // DI and registering all the configuration
     public Main(String arg) {
@@ -27,6 +28,7 @@ public class Main {
         ExecutorService executor = Executors.newCachedThreadPool();
         this.networkManager = new NetworkManager(config, messageHandler, queue, executor);
         this.server = new Server(config, queue, networkManager, executor);
+        this.inputHandler = new InputHandler(networkManager.getCircuitManager());
     }
 
     public static void main(String[] args) {
@@ -34,9 +36,9 @@ public class Main {
     }
 
     private void startNetwork() {
-        logger.info("Starting network on port: {}...", config.getNodePort());
         this.server.start();
         this.messageHandler.start();
         this.networkManager.start();
+        this.inputHandler.start();
     }
 }
