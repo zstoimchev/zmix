@@ -29,7 +29,7 @@ public class InputHandler extends Thread {
     }
 
     private void processRequest(String input) {
-        if (isUrlValid(input)) circuitManager.sendRequest(input);
+        if (isUrlValid(input)) circuitManager.sendRequestToQueue(input);
         else logger.error("Invalid URL. Must start with http:// or https://");
     }
 
