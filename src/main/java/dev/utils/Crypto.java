@@ -65,7 +65,7 @@ public class Crypto {
         }
     }
 
-    public byte[] deriveAESKey(byte[] sharedSecret) {
+    public static byte[] deriveAESKey(byte[] sharedSecret) {
         try {
             // Use SHA-256 as a simple KDF
             // In production, use proper HKDF
