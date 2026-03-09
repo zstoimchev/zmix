@@ -15,10 +15,7 @@ import dev.utils.Utils;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-import javax.net.ssl.SSLSocketFactory;
 import java.io.*;
-import java.net.InetAddress;
-import java.net.Socket;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
@@ -110,25 +107,22 @@ public class CircuitManager {
         this.entryPeer.send(msg);
     }
 
-    private Peer getOrConnectToPeer(PeerInfo peerInfo) {
-        Peer existing = networkManager.getConnectedPeers().get(peerInfo.getPublicKey());
-        if (existing != null) return existing;
+    private void extendToNextHop(int hop) {
+        logger.info("Extending circuit to hop {}", hop);
+        PeerInfo nextHop = path.get(hop);
 
-        networkManager.connectToPeer(peerInfo.getHost(), peerInfo.getPort());
+        KeyPair eph = crypto.generateECDHKeyPair();
+        pendingKeys.put(hop, eph);
 
-        int attempts = 0;
-        while (attempts < 30) {
-            try {
-                Thread.sleep(100);
-                Peer peer = networkManager.getConnectedPeers().get(peerInfo.getPublicKey());
-                if (peer != null) return peer;
-                attempts++;
-            } catch (InterruptedException e) {
-                logger.error("Thread was interrupted while waiting for peer connection.", e);
-                return null;
-            }
-        }
-        return null;
+        CircuitExtendRequestPayload payload = new CircuitExtendRequestPayload(
+                this.getMyCircuitId(),
+                nextHop,
+                Utils.encodeBytesToString(eph.getPublic().getEncoded()));
+
+        byte[] encrypted = payload.toBytes();
+        for (int i = hop - 1; i >= 0; i--) encrypted = crypto.encryptAES(encrypted, keys.get(i));
+        Message message = MessageBuilder.buildCircuitExtendMessageRequest(myCircuitId, encrypted);
+        entryPeer.send(message);
     }
 
     public void onCircuitCreateRequest(Peer peer, Message message) {
@@ -139,7 +133,7 @@ public class CircuitManager {
         PublicKey theirEphemeralPublicKey = Crypto.decodePublicKey(payload.getEphemeralKey());
 
         byte[] sharedSecret = crypto.performECDH(ephemeralKeyPair.getPrivate(), theirEphemeralPublicKey);
-        byte[] sessionKey = crypto.deriveAESKey(sharedSecret);
+        byte[] sessionKey = Crypto.deriveAESKey(sharedSecret);
 
         relayCircuits.put(circuitId, new RelayCircuit(peer, null, sessionKey));
 
@@ -171,7 +165,7 @@ public class CircuitManager {
         PublicKey theirPub = Crypto.decodePublicKey(payload.getEphemeralKey());
 
         byte[] sharedSecret = crypto.performECDH(eph.getPrivate(), theirPub);
-        byte[] sessionKey = crypto.deriveAESKey(sharedSecret);
+        byte[] sessionKey = Crypto.deriveAESKey(sharedSecret);
 
         keys.put(currentHop, sessionKey);
         logger.debug("Established session key with hop {}", currentHop);
@@ -184,24 +178,6 @@ public class CircuitManager {
             logger.info("Circuit {} fully established with {} hops!", myCircuitId, circuitLength);
             requestExecutor.submit(this::processRequestsFromQueue);
         }
-    }
-
-    private void extendToNextHop(int hop) {
-        logger.info("Extending circuit to hop {}", hop);
-        PeerInfo nextHop = path.get(hop);
-
-        KeyPair eph = crypto.generateECDHKeyPair();
-        pendingKeys.put(hop, eph);
-
-        CircuitExtendRequestPayload payload = new CircuitExtendRequestPayload(
-                this.getMyCircuitId(),
-                nextHop,
-                Utils.encodeBytesToString(eph.getPublic().getEncoded()));
-
-        byte[] encrypted = payload.toBytes();
-        for (int i = hop - 1; i >= 0; i--) encrypted = crypto.encryptAES(encrypted, keys.get(i));
-        Message message = MessageBuilder.buildCircuitExtendMessageRequest(myCircuitId, encrypted);
-        entryPeer.send(message);
     }
 
     public void onCircuitExtendRequest(Peer peer, Message message) {
@@ -260,7 +236,7 @@ public class CircuitManager {
         PublicKey hopPub = Crypto.decodePublicKey(ephemeralKey);
 
         byte[] secret = crypto.performECDH(eph.getPrivate(), hopPub);
-        byte[] sessionKey = crypto.deriveAESKey(secret);
+        byte[] sessionKey = Crypto.deriveAESKey(secret);
 
         keys.put(currentHop, sessionKey);
         logger.info("Established session key with hop {}", currentHop);
@@ -272,52 +248,6 @@ public class CircuitManager {
             circuitType = CircuitStatus.ACTIVE;
             logger.info("Circuit {} fully established with {} hops!", myCircuitId, circuitLength);
             requestExecutor.submit(this::processRequestsFromQueue);
-        }
-    }
-
-    public boolean isCircuitReady() {
-        return circuitType == CircuitStatus.ACTIVE && currentHop == circuitLength;
-    }
-
-    public void sendRequest(String input) {
-        if (!isCircuitReady()) this.init();
-        this.requestQueue.add(input);
-    }
-
-    public void processRequest(String input) {
-        URI uri = URI.create(input);
-        String host = uri.getHost();
-        String scheme = uri.getScheme() != null ? uri.getScheme() : "http";
-        String port = scheme.equalsIgnoreCase("https") ? "443" : "80";
-
-        String http = "GET / HTTP/1.1\r\n" +
-                "Host: " + host + "\r\n" +
-                "Connection: close\r\n" +
-                "\r\n";
-
-        byte[] requestBytes = http.getBytes(StandardCharsets.UTF_8);
-        byte[] encryptedRequest = encrypt(requestBytes);
-
-        Message dataMessage = MessageBuilder.buildDataTransferMessageRequest(
-                this.getMyCircuitId(),
-                host,
-                port,
-                encryptedRequest
-        );
-
-        send(dataMessage);
-    }
-
-    private void processRequestsFromQueue() {
-        while (true) {
-            try {
-                String input = requestQueue.take();
-                processRequest(input);
-            } catch (InterruptedException e) {
-                logger.error(e.getMessage());
-                Thread.currentThread().interrupt();
-                return;
-            }
         }
     }
 
@@ -336,7 +266,7 @@ public class CircuitManager {
 
         if (relay.nextHop == null) {
             try {
-                byte[] response = sendAsExitNode(payload.getHost(), payload.getPort(), decrypted);
+                byte[] response = Utils.sendHttpRequest(payload.getHost(), payload.getPort(), decrypted);
                 byte[] encryptedResponse = crypto.encryptAES(response, relay.sessionKey);
                 Message responseMessage = MessageBuilder.buildDataTransferMessageResponse(
                         circuitId,
@@ -356,31 +286,6 @@ public class CircuitManager {
                 decrypted
         );
         relay.nextHop.send(dataMessage);
-    }
-
-    private byte[] sendAsExitNode(String host, String port, byte[] httpRequestData) throws IOException {
-        int portNum = Integer.parseInt(port);
-        Socket socket;
-
-        if (portNum == 443) {
-            SSLSocketFactory factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
-            socket = factory.createSocket(host, portNum);
-            logger.debug("Created SSL socket to {}:{}", host, portNum);
-        } else {
-            socket = new Socket(InetAddress.getByName(host), portNum);
-            logger.debug("Created plain socket to {}:{}", host, portNum);
-        }
-
-        socket.getOutputStream().write(httpRequestData);
-        socket.getOutputStream().flush();
-
-        StringBuilder response = new StringBuilder();
-        BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        String line;
-        while ((line = br.readLine()) != null) response.append(line).append("\r\n");
-        br.close();
-        socket.close();
-        return response.toString().getBytes(StandardCharsets.UTF_8);
     }
 
     public void onDataTransferResponse(Peer peer, Message message) {
@@ -412,6 +317,45 @@ public class CircuitManager {
         }
     }
 
+    public void sendRequestToQueue(String input) {
+        if (!isCircuitReady()) this.init();
+        this.requestQueue.add(input);
+    }
+
+    private void processRequestsFromQueue() {
+        while (true) {
+            try {
+                String input = requestQueue.take();
+                processRequest(input);
+            } catch (InterruptedException e) {
+                logger.error(e.getMessage());
+                Thread.currentThread().interrupt();
+                return;
+            }
+        }
+    }
+
+    public void processRequest(String input) {
+        URI uri = URI.create(input);
+        String host = uri.getHost();
+        String scheme = uri.getScheme() != null ? uri.getScheme() : "http";
+        String port = scheme.equalsIgnoreCase("https") ? "443" : "80";
+
+        String http = Utils.buildHttpGet(host);
+
+        byte[] requestBytes = http.getBytes(StandardCharsets.UTF_8);
+        byte[] encryptedRequest = encrypt(requestBytes);
+
+        Message dataMessage = MessageBuilder.buildDataTransferMessageRequest(
+                this.getMyCircuitId(),
+                host,
+                port,
+                encryptedRequest
+        );
+
+        sendToEntry(dataMessage);
+    }
+
     private byte[] encrypt(byte[] requestBytes) {
         byte[] encrypted = requestBytes;
         for (int i = currentHop - 1; i >= 0; i--) {
@@ -428,8 +372,33 @@ public class CircuitManager {
         return decrypted;
     }
 
-    private void send(Message message) {
+    private void sendToEntry(Message message) {
         entryPeer.send(message);
+    }
+
+    private Peer getOrConnectToPeer(PeerInfo peerInfo) {
+        Peer existing = networkManager.getConnectedPeers().get(peerInfo.getPublicKey());
+        if (existing != null) return existing;
+
+        networkManager.connectToPeer(peerInfo.getHost(), peerInfo.getPort());
+
+        int attempts = 0;
+        while (attempts < 30) {
+            try {
+                Thread.sleep(100);
+                Peer peer = networkManager.getConnectedPeers().get(peerInfo.getPublicKey());
+                if (peer != null) return peer;
+                attempts++;
+            } catch (InterruptedException e) {
+                logger.error("Thread was interrupted while waiting for peer connection.", e);
+                return null;
+            }
+        }
+        return null;
+    }
+
+    public boolean isCircuitReady() {
+        return circuitType == CircuitStatus.ACTIVE && currentHop == circuitLength;
     }
 
     @AllArgsConstructor
