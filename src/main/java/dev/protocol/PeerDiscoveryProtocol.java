@@ -47,16 +47,13 @@ public class PeerDiscoveryProtocol implements Protocol {
     }
 
     private void handlePeerDiscoveryRequest(Peer peer, Message message) {
-        logger.info("Received peer request from: {}", peer.getPeerId());
-
         List<PeerInfo> peerList = networkManager.getKnownPeers();
         Message response = MessageBuilder.buildPeerResponseMessage(peerList);
         peer.send(response);
-        logger.info("Sent {} peers to: {}", peerList.size(), peer.getPeerId());
+        logger.debug("Sent {} peers to: {}", peerList.size(), peer.getPeerId());
     }
 
     private void handlePeerDiscoveryResponse(Peer peer, Message message) {
-        logger.info("Received peer response from: {}", peer.getPeerId());
         PeerResponsePayload payload = (PeerResponsePayload) message.getPayload();
         if (payload == null || payload.getPeerList() == null) {
             logger.warn("Received empty peer response");
@@ -82,7 +79,7 @@ public class PeerDiscoveryProtocol implements Protocol {
 
     private boolean isKnown(PeerInfo peerInfo) {
         boolean presentInKnown = networkManager.getKnownPeers().stream().anyMatch(p -> p.getPublicKey().equals(peerInfo.getPublicKey()));
-        boolean presentInConnected = networkManager.getConnectedPeers().values().stream().anyMatch(p -> p.getPublicKeyBase64Encoded().equals(peerInfo.getPublicKey()));
+        boolean presentInConnected = networkManager.getConnectedPeers().values().stream().anyMatch(p -> p.getPublicKeyEncoded().equals(peerInfo.getPublicKey()));
         return presentInKnown || presentInConnected;
     }
 
@@ -91,7 +88,6 @@ public class PeerDiscoveryProtocol implements Protocol {
     }
 
     public void requestPeers(Peer peer) {
-        logger.info("Requesting peers from peer: {}", peer.getPeerId());
         Message request = MessageBuilder.buildPeerRequestMessage();
         peer.send(request);
     }

@@ -1,6 +1,6 @@
 package dev;
 
-import dev.network.MessageQueue;
+import dev.models.MessageQueue;
 import dev.network.NetworkManager;
 import dev.network.Server;
 import dev.protocol.InputHandler;
@@ -36,7 +36,6 @@ public class Main {
     }
 
     private void startNetwork() {
-        logger.info("Starting network on port: {}...", config.getNodePort());
         this.server.start();
         this.messageHandler.start();
         this.networkManager.start();

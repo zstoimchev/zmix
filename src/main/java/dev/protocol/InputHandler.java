@@ -20,7 +20,7 @@ public class InputHandler extends Thread {
     @Override
     public void run() {
         while (!this.isInterrupted()) {
-            logger.info("Enter URL to send request: ");
+//            logger.info("Enter URL to send request: ");
             String input = scanner.nextLine();
 //            logger.debug("URL to send: " + input);
             processRequest(input);
@@ -29,7 +29,7 @@ public class InputHandler extends Thread {
     }
 
     private void processRequest(String input) {
-        if (isUrlValid(input)) circuitManager.sendRequest(input);
+        if (isUrlValid(input)) circuitManager.sendRequestToQueue(input);
         else logger.error("Invalid URL. Must start with http:// or https://");
     }
 
