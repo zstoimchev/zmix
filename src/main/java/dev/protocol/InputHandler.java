@@ -1,28 +1,38 @@
 package dev.protocol;
 
 import dev.network.CircuitManager;
+import dev.network.NetworkManager;
 import dev.utils.Logger;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Scanner;
 
 public class InputHandler extends Thread {
     private final Logger logger;
     private final Scanner scanner;
+    private final NetworkManager networkManager;
     private final CircuitManager circuitManager;
 
-    public InputHandler(CircuitManager circuitManager) {
+    public InputHandler(NetworkManager networkManager) {
         this.logger = Logger.getLogger(this.getClass());
         this.setName("InputHandler");
         this.scanner = new Scanner(System.in);
-        this.circuitManager = circuitManager;
+        this.networkManager = networkManager;
+        this.circuitManager = networkManager.getCircuitManager();
     }
 
     @Override
     public void run() {
+        try {
+            networkManager.waitUntilReady();
+        } catch (InterruptedException e) {
+            logger.error("Interrupted while waiting for network manager");
+            return;
+        }
         while (!this.isInterrupted()) {
-//            logger.info("Enter URL to send request: ");
+            logger.info("Enter URL to send request: ");
             String input = scanner.nextLine();
-//            logger.debug("URL to send: " + input);
             processRequest(input);
         }
         scanner.close();
@@ -35,6 +45,13 @@ public class InputHandler extends Thread {
 
     private boolean isUrlValid(String url) {
         if (url == null || url.isEmpty()) return false;
-        return url.startsWith("https://") || url.startsWith("http://");
+
+        try {
+            URI uri = new URI(url);
+            String scheme = uri.getScheme();
+            return "http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme);
+        } catch (URISyntaxException e) {
+            return false;
+        }
     }
 }
