@@ -1,6 +1,7 @@
 package dev.protocol;
 
 import dev.network.CircuitManager;
+import dev.network.NetworkManager;
 import dev.utils.Logger;
 
 import java.net.URI;
@@ -10,19 +11,27 @@ import java.util.Scanner;
 public class InputHandler extends Thread {
     private final Logger logger;
     private final Scanner scanner;
+    private final NetworkManager networkManager;
     private final CircuitManager circuitManager;
 
-    public InputHandler(CircuitManager circuitManager) {
+    public InputHandler(NetworkManager networkManager) {
         this.logger = Logger.getLogger(this.getClass());
         this.setName("InputHandler");
         this.scanner = new Scanner(System.in);
-        this.circuitManager = circuitManager;
+        this.networkManager = networkManager;
+        this.circuitManager = networkManager.getCircuitManager();
     }
 
     @Override
     public void run() {
+        try {
+            networkManager.waitUntilReady();
+        } catch (InterruptedException e) {
+            logger.error("Interrupted while waiting for network manager");
+            return;
+        }
         while (!this.isInterrupted()) {
-//            logger.info("Enter URL to send request: ");
+            logger.info("Enter URL to send request: ");
             String input = scanner.nextLine();
             processRequest(input);
         }

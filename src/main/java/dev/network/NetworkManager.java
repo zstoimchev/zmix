@@ -67,13 +67,28 @@ public class NetworkManager {
 
     public void start() {
         logger.info("Starting network manager");
-        isRunning.set(true);
+        setReady();
         peerDiscoveryProtocol.init();
         scheduler.scheduleWithFixedDelay(
                 this::startPeerMaintenance,
                 config.getPeerDiscoveryInitialDelayInSeconds(),
                 config.getPeerDiscoveryDelayInSeconds(),
                 TimeUnit.SECONDS);
+    }
+
+    public synchronized void setReady() {
+        isRunning.set(true);
+        notifyAll();
+    }
+
+    public synchronized void waitUntilReady() throws InterruptedException {
+        while (!isReady()) {
+            wait();
+        }
+    }
+
+    public synchronized boolean isReady() {
+        return isRunning.get();
     }
 
     public void registerPeer(Peer peer) {

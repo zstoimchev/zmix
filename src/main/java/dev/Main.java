@@ -27,7 +27,7 @@ public class Main {
         ExecutorService executor = Executors.newCachedThreadPool();
         this.networkManager = new NetworkManager(config, messageHandler, queue, executor);
         this.server = new Server(config, queue, networkManager, executor);
-        this.inputHandler = new InputHandler(networkManager.getCircuitManager());
+        this.inputHandler = new InputHandler(networkManager);
     }
 
     public static void main(String[] args) {
