@@ -13,7 +13,6 @@ import java.util.concurrent.Executors;
 
 public class Main {
     private final Logger logger;
-    private final Config config;
     private final Server server;
     private final NetworkManager networkManager;
     private final MessageHandler messageHandler;
@@ -22,7 +21,7 @@ public class Main {
     // DI and registering all the configuration
     public Main(String arg) {
         this.logger = Logger.getLogger(Main.class);
-        this.config = Config.load(arg);
+        Config config = Config.load(arg);
         MessageQueue queue = new MessageQueue();
         this.messageHandler = new MessageHandler(queue);
         ExecutorService executor = Executors.newCachedThreadPool();
