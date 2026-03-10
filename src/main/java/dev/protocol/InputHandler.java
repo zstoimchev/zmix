@@ -3,6 +3,8 @@ package dev.protocol;
 import dev.network.CircuitManager;
 import dev.utils.Logger;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Scanner;
 
 public class InputHandler extends Thread {
@@ -22,7 +24,6 @@ public class InputHandler extends Thread {
         while (!this.isInterrupted()) {
 //            logger.info("Enter URL to send request: ");
             String input = scanner.nextLine();
-//            logger.debug("URL to send: " + input);
             processRequest(input);
         }
         scanner.close();
@@ -35,6 +36,13 @@ public class InputHandler extends Thread {
 
     private boolean isUrlValid(String url) {
         if (url == null || url.isEmpty()) return false;
-        return url.startsWith("https://") || url.startsWith("http://");
+
+        try {
+            URI uri = new URI(url);
+            String scheme = uri.getScheme();
+            return "http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme);
+        } catch (URISyntaxException e) {
+            return false;
+        }
     }
 }
