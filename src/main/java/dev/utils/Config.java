@@ -13,7 +13,7 @@ public class Config {
     }
 
     public static Config load(String[] args) {
-        String filename = args.length == 1 ? args[0] : "node.peer.properties";
+        String filename = args.length >= 1 ? args[0] : "node.peer.properties";
         Properties properties = new Properties();
 
         try (InputStream in = Thread.currentThread().getContextClassLoader().getResourceAsStream(filename)) {
