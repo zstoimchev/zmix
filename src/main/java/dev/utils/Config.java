@@ -12,7 +12,8 @@ public class Config {
         this.properties = properties;
     }
 
-    public static Config load(String filename) {
+    public static Config load(String[] args) {
+        String filename = args.length == 1 ? args[0] : "node.peer.properties";
         Properties properties = new Properties();
 
         try (InputStream in = Thread.currentThread().getContextClassLoader().getResourceAsStream(filename)) {
@@ -77,6 +78,18 @@ public class Config {
 
     public int getCircuitLength() {
         return Integer.parseInt(properties.getProperty("circuit.length", "3"));
+    }
+
+    public boolean isGuiEnabled(String[] args) {
+        for (String arg : args) {
+            if (arg.equalsIgnoreCase("--gui")) return true;
+            if (arg.equalsIgnoreCase("--no-gui")) return false;
+        }
+
+        String envGui = System.getenv("GUI_ENABLED");
+        if (envGui != null) return Boolean.parseBoolean(envGui);
+
+        return Boolean.parseBoolean(properties.getProperty("gui.enabled", "false"));
     }
 
     // TODO: method for verifying config values (integers specifically)

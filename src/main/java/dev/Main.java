@@ -21,20 +21,20 @@ public class Main {
     private final Gui gui;
 
     // DI and registering all the configuration
-    public Main(String arg) {
+    public Main(String[] args) {
         this.logger = Logger.getLogger(Main.class);
-        Config config = Config.load(arg);
+        Config config = Config.load(args);
         MessageQueue queue = new MessageQueue();
         this.messageHandler = new MessageHandler(queue);
         ExecutorService executor = Executors.newCachedThreadPool();
         this.networkManager = new NetworkManager(config, messageHandler, queue, executor);
         this.server = new Server(config, queue, networkManager, executor);
         this.inputHandler = new InputHandler(networkManager);
-        this.gui = new Gui(true);
+        this.gui = new Gui(config.isGuiEnabled(args), networkManager);
     }
 
     public static void main(String[] args) {
-        new Main(args.length == 1 ? args[0] : "node.peer.properties").startNetwork();
+        new Main(args).startNetwork();
     }
 
     private void startNetwork() {
