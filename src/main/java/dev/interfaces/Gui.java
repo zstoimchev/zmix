@@ -75,7 +75,6 @@ public class Gui extends Thread {
                 SwingUtilities.invokeLater(() -> {
                     editorPane.setContentType("text/html");
                     editorPane.setText(html);
-//                    editorPane.setText("<style>* { font-size: 20px; }</style>" + html);
                     editorPane.setCaretPosition(0);
                 });
             } catch (InterruptedException e) {
