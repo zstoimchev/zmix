@@ -1,5 +1,6 @@
 package dev;
 
+import dev.interfaces.Gui;
 import dev.models.MessageQueue;
 import dev.network.NetworkManager;
 import dev.network.Server;
@@ -17,6 +18,7 @@ public class Main {
     private final NetworkManager networkManager;
     private final MessageHandler messageHandler;
     private final InputHandler inputHandler;
+    private final Gui gui;
 
     // DI and registering all the configuration
     public Main(String arg) {
@@ -28,6 +30,7 @@ public class Main {
         this.networkManager = new NetworkManager(config, messageHandler, queue, executor);
         this.server = new Server(config, queue, networkManager, executor);
         this.inputHandler = new InputHandler(networkManager);
+        this.gui = new Gui(true);
     }
 
     public static void main(String[] args) {
@@ -39,5 +42,6 @@ public class Main {
         this.messageHandler.start();
         this.networkManager.start();
         this.inputHandler.start();
+        this.gui.start();
     }
 }
