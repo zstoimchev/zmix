@@ -25,13 +25,12 @@ public class Utils {
         return (start != -1) ? response.substring(start) : response;
     }
 
-    public static String saveHttpResponseNaive(String response) throws FileNotFoundException {
+    public static String saveHttpResponseNaive(String response, String fileName) throws FileNotFoundException {
         String html = extractHtml(response);
-        String filename = "responses/" + System.nanoTime() + ".html";
-        try (PrintWriter out = new PrintWriter(filename)) {
+        try (PrintWriter out = new PrintWriter(fileName)) {
             out.println(html);
         }
-        return filename;
+        return html;
     }
 
     public static String buildHttpGet(String host) {
