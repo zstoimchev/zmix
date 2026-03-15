@@ -13,6 +13,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.*;
 import java.util.concurrent.*;
@@ -126,6 +127,7 @@ public class NetworkManager {
         Collections.shuffle(candidates);
 
         for (PeerInfo info : candidates) {
+            logger.info("Trying to connect to peer: {}:{}", info.host, info.port);
             if (connectedPeers.size() > config.getMinConnections()) break;
             connectToPeer(info.host, info.port);
         }
@@ -133,7 +135,9 @@ public class NetworkManager {
 
     public void connectToPeer(String ip, int port) {
         try {
-            Socket clientSocket = new Socket(ip, port);
+            Socket clientSocket = new Socket();
+            clientSocket.connect(new InetSocketAddress(ip, port), 3000);
+            logger.info("connecting proceeds");
             Peer newPeer = new Peer(clientSocket, queue, this, PeerDirection.OUTBOUND);
             peerExecutor.submit(newPeer);
         } catch (IOException e) {
