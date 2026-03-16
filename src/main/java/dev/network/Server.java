@@ -55,13 +55,22 @@ public class Server extends Thread {
     }
 
     private void connectToBootstrapNodes() {
-        try {
-            Socket socket = new Socket(config.getBootstrapNodeHost(), config.getBootstrapNodePort());
-            logger.info("Connected to bootstrap node: " + socket.getRemoteSocketAddress());
-            peerExecutor.submit(new Peer(socket, queue, networkManager, PeerDirection.OUTBOUND));
-        } catch (IOException e) {
-            logger.error("Could not connect to Bootstrap Node. Continuing on my own...", e);
+        int retries = 10;
+        while (retries-- > 0) {
+            try {
+                Socket socket = new Socket(config.getBootstrapNodeHost(), config.getBootstrapNodePort());
+                logger.info("Connected to bootstrap node: " + socket.getRemoteSocketAddress());
+                peerExecutor.submit(new Peer(socket, queue, networkManager, PeerDirection.OUTBOUND));
+                return;
+            } catch (IOException e) {
+                try {
+                    Thread.sleep(500);  // todo: configurable retry delay
+                } catch (InterruptedException ex) {
+                    logger.error("Interrupted while waiting for bootstrap node.", ex);
+                }
+            }
         }
+        logger.error("Could not connect to bootstrap node. Continuing alone");
     }
 
     public void shutdown() {
