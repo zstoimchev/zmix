@@ -1,4 +1,4 @@
-package dev.protocol;
+package dev.interfaces;
 
 import dev.network.CircuitManager;
 import dev.network.NetworkManager;
@@ -8,13 +8,13 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Scanner;
 
-public class InputHandler extends Thread {
+public class Cli extends Thread {
     private final Logger logger;
     private final Scanner scanner;
     private final NetworkManager networkManager;
     private final CircuitManager circuitManager;
 
-    public InputHandler(NetworkManager networkManager) {
+    public Cli(NetworkManager networkManager) {
         this.logger = Logger.getLogger(this.getClass());
         this.setName("InputHandler");
         this.scanner = new Scanner(System.in);

@@ -4,7 +4,7 @@ import dev.interfaces.Gui;
 import dev.models.MessageQueue;
 import dev.network.NetworkManager;
 import dev.network.Server;
-import dev.protocol.InputHandler;
+import dev.interfaces.Cli;
 import dev.protocol.MessageHandler;
 import dev.utils.Config;
 import dev.utils.Logger;
@@ -17,7 +17,7 @@ public class Main {
     private final Server server;
     private final NetworkManager networkManager;
     private final MessageHandler messageHandler;
-    private final InputHandler inputHandler;
+    private final Cli inputHandler;
     private final Gui gui;
 
     // DI and registering all the configuration
@@ -29,7 +29,7 @@ public class Main {
         ExecutorService executor = Executors.newCachedThreadPool();
         this.networkManager = new NetworkManager(config, messageHandler, queue, executor);
         this.server = new Server(config, queue, networkManager, executor);
-        this.inputHandler = new InputHandler(networkManager);
+        this.inputHandler = new Cli(networkManager);
         this.gui = new Gui(config.isGuiEnabled(args), networkManager);
     }
 
