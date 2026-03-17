@@ -92,5 +92,9 @@ public class Config {
         return Boolean.parseBoolean(properties.getProperty("gui.enabled", "false"));
     }
 
+    public int getConnectionRetryAttempts() {
+        return Integer.parseInt(properties.getProperty("connection.retry.attempts", "10"));
+    }
+
     // TODO: method for verifying config values (integers specifically)
 }

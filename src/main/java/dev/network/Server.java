@@ -33,7 +33,7 @@ public class Server extends Thread {
     public void run() {
         try (ServerSocket serverSocket = new ServerSocket(config.getNodePort())) {
             logger.info("Server started and waiting for connections on port " + config.getNodePort());
-            if (!config.isBootstrapNode()) connectToBootstrapNodes();
+            if (!config.isBootstrapNode()) peerExecutor.submit(this::connectToBootstrapNodes);
 
             while (!this.isInterrupted()) {
                 Socket clientSocket = serverSocket.accept();
@@ -55,8 +55,9 @@ public class Server extends Thread {
     }
 
     private void connectToBootstrapNodes() {
-        int retries = 10;
-        while (retries-- > 0) {
+        int attempts = config.getConnectionRetryAttempts();
+        int retries = 0;
+        while (retries++ < attempts) {
             try {
                 Socket socket = new Socket(config.getBootstrapNodeHost(), config.getBootstrapNodePort());
                 logger.info("Connected to bootstrap node: " + socket.getRemoteSocketAddress());
@@ -64,7 +65,9 @@ public class Server extends Thread {
                 return;
             } catch (IOException e) {
                 try {
-                    Thread.sleep(500);  // todo: configurable retry delay
+                    long timeout = (long) (Math.pow(retries, 2) * 100);
+                    logger.warn("Failed to connect to bootstrap node (attempt {}/{}). Retrying in {}ms...", retries, attempts, timeout);
+                    Thread.sleep(timeout);
                 } catch (InterruptedException ex) {
                     logger.error("Interrupted while waiting for bootstrap node.", ex);
                 }
