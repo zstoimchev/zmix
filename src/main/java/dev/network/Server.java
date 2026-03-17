@@ -8,6 +8,7 @@ import dev.utils.Logger;
 
 import java.io.IOException;
 import java.net.BindException;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
@@ -55,25 +56,8 @@ public class Server extends Thread {
     }
 
     private void connectToBootstrapNodes() {
-        int attempts = config.getConnectionRetryAttempts();
-        int retries = 0;
-        while (retries++ < attempts) {
-            try {
-                Socket socket = new Socket(config.getBootstrapNodeHost(), config.getBootstrapNodePort());
-                logger.info("Connected to bootstrap node: " + socket.getRemoteSocketAddress());
-                peerExecutor.submit(new Peer(socket, queue, networkManager, PeerDirection.OUTBOUND));
-                return;
-            } catch (IOException e) {
-                try {
-                    long timeout = (long) (Math.pow(retries, 2) * 100);
-                    logger.warn("Failed to connect to bootstrap node (attempt {}/{}). Retrying in {}ms...", retries, attempts, timeout);
-                    Thread.sleep(timeout);
-                } catch (InterruptedException ex) {
-                    logger.error("Interrupted while waiting for bootstrap node.", ex);
-                }
-            }
-        }
-        logger.error("Could not connect to bootstrap node. Continuing alone");
+        logger.info("Connecting to the bootstrap node at {}:{}", config.getBootstrapNodeHost(), config.getBootstrapNodePort());
+        networkManager.connectToPeer(config.getBootstrapNodeHost(), config.getBootstrapNodePort());
     }
 
     public void shutdown() {

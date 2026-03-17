@@ -134,15 +134,28 @@ public class NetworkManager {
     }
 
     public void connectToPeer(String ip, int port) {
-        try {
-            Socket clientSocket = new Socket();
-            clientSocket.connect(new InetSocketAddress(ip, port), 3000);
-            logger.info("connecting proceeds");
-            Peer newPeer = new Peer(clientSocket, queue, this, PeerDirection.OUTBOUND);
-            peerExecutor.submit(newPeer);
-        } catch (IOException e) {
-            throw new CustomException("Failed connecting to new peer", e);
+        int attempts = config.getConnectionRetryAttempts();
+        int retries = 0;
+        while (retries++ < attempts) {
+            try {
+                Socket socket = new Socket();
+                socket.connect(new InetSocketAddress(ip, port), config.getConnectionTimeoutInMilliseconds());
+                logger.info("Connected to node: {}", socket.getRemoteSocketAddress());
+                peerExecutor.submit(new Peer(socket, queue, this, PeerDirection.OUTBOUND));
+                return;
+            } catch (IOException e) {
+                try {
+                    long timeout = (1L << (retries - 1)) * 100;
+                    logger.warn("Failed connecting to {}:{} (attempt {}/{}). Retrying in {}ms...", ip, port, retries, attempts, timeout);
+                    if (retries == attempts) continue;
+                    Thread.sleep(timeout);
+                } catch (InterruptedException ex) {
+                    logger.error("Interrupted while waiting for outbound node.", ex);
+                    return;
+                }
+            }
         }
+        logger.error("Could not connect to outbound node. Continuing alone");
     }
 
     public synchronized int getConnectedPeerCount() {
