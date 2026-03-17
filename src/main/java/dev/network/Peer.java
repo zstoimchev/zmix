@@ -46,7 +46,8 @@ public class Peer implements Runnable {
         this.peerId = UUID.randomUUID();
         this.socket = socket;
         this.peerDirection = peerDirection;
-        this.ip = socket.getLocalAddress().getHostAddress();
+//        this.ip = socket.getLocalAddress().getHostAddress();
+        this.ip = socket.getInetAddress().getHostAddress();
         this.networkManager = networkManager;
         this.messageQueue = queue;
 
