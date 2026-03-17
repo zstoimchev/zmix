@@ -92,5 +92,13 @@ public class Config {
         return Boolean.parseBoolean(properties.getProperty("gui.enabled", "false"));
     }
 
+    public int getConnectionRetryAttempts() {
+        return Integer.parseInt(properties.getProperty("connection.retry.attempts", "10"));
+    }
+
+    public int getConnectionTimeoutInMilliseconds() {
+        return Integer.parseInt(properties.getProperty("connection.timeout.milliseconds", "5000"));
+    }
+
     // TODO: method for verifying config values (integers specifically)
 }

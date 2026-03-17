@@ -33,7 +33,7 @@ public class Server extends Thread {
     public void run() {
         try (ServerSocket serverSocket = new ServerSocket(config.getNodePort())) {
             logger.info("Server started and waiting for connections on port " + config.getNodePort());
-            if (!config.isBootstrapNode()) connectToBootstrapNodes();
+            if (!config.isBootstrapNode()) peerExecutor.submit(this::connectToBootstrapNodes);
 
             while (!this.isInterrupted()) {
                 Socket clientSocket = serverSocket.accept();
@@ -55,13 +55,8 @@ public class Server extends Thread {
     }
 
     private void connectToBootstrapNodes() {
-        try {
-            Socket socket = new Socket(config.getBootstrapNodeHost(), config.getBootstrapNodePort());
-            logger.info("Connected to bootstrap node: " + socket.getRemoteSocketAddress());
-            peerExecutor.submit(new Peer(socket, queue, networkManager, PeerDirection.OUTBOUND));
-        } catch (IOException e) {
-            logger.error("Could not connect to Bootstrap Node. Continuing on my own...", e);
-        }
+        logger.info("Connecting to the bootstrap node at {}:{}", config.getBootstrapNodeHost(), config.getBootstrapNodePort());
+        networkManager.connectToPeer(config.getBootstrapNodeHost(), config.getBootstrapNodePort());
     }
 
     public void shutdown() {

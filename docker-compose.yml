@@ -7,6 +7,8 @@ services:
       - NODE_PORT=12137
     ports:
       - "12137:12137"
+    stdin_open: true
+    tty: true
     networks:
       - onion-network
 
@@ -17,6 +19,8 @@ services:
       - BOOTSTRAP_HOST=bootstrap-node
     depends_on:
       - bootstrap-node
+    stdin_open: true
+    tty: true
     networks:
       - onion-network
 
@@ -27,6 +31,8 @@ services:
       - BOOTSTRAP_HOST=bootstrap-node
     depends_on:
       - bootstrap-node
+    stdin_open: true
+    tty: true
     networks:
       - onion-network
 
@@ -37,6 +43,8 @@ services:
       - BOOTSTRAP_HOST=bootstrap-node
     depends_on:
       - bootstrap-node
+    stdin_open: true
+    tty: true
     networks:
       - onion-network
 
