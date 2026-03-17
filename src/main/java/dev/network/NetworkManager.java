@@ -129,7 +129,7 @@ public class NetworkManager {
         for (PeerInfo info : candidates) {
             logger.info("Trying to connect to peer: {}:{}", info.host, info.port);
             if (connectedPeers.size() > config.getMinConnections()) break;
-            connectToPeer(info.host, info.port);
+            peerExecutor.submit(() -> connectToPeer(info.host, info.port));
         }
     }
 
