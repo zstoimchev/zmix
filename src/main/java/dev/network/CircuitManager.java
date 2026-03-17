@@ -121,6 +121,7 @@ public class CircuitManager {
 
         if (this.entryPeer == null) {
             logger.error("Failed to connect to entry node");
+            this.circuitType = null;
             return;
         }
 
