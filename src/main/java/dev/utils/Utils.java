@@ -5,6 +5,9 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /*
  * Utility class for static methods shared across all the methods
@@ -28,11 +31,11 @@ public class Utils {
         return response.substring(start, end + 7);
     }
 
-    public static String saveHttpResponseNaive(String response, String fileName) throws FileNotFoundException {
+    public static String saveHttpResponseNaive(String response, String fileName) throws IOException {
         String html = extractHtml(response);
-        try (PrintWriter out = new PrintWriter(fileName)) {
-            out.println(html);
-        }
+        Path path = Paths.get(fileName);
+        Files.createDirectories(path.getParent());
+        Files.writeString(path, html);
         return html;
     }
 

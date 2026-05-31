@@ -342,7 +342,7 @@ public class CircuitManager {
                     = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =""", response);
             String html = Utils.saveHttpResponseNaive(response, fileName);
             logger.info("Saved HTTP response to file: {}", fileName);
-        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
             logger.error("Failed to save HTTP response to file", e);
             throw new RuntimeException(e);
         }
