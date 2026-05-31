@@ -335,8 +335,12 @@ public class CircuitManager {
 
         try {
             String fileName = "responses/" + System.nanoTime() + ".html";
+            logger.info("""
+                    HTML response:\s
+                    = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =\s
+                    {}\s
+                    = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =""", response);
             String html = Utils.saveHttpResponseNaive(response, fileName);
-            setLastHtmlResponse(html);
             logger.info("Saved HTTP response to file: {}", fileName);
         } catch (FileNotFoundException e) {
             logger.error("Failed to save HTTP response to file", e);
