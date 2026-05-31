@@ -9,7 +9,7 @@ import dev.message.payload.HandshakePayload;
 import dev.message.MessageSerializer;
 import dev.models.enums.PeerDirection;
 import dev.utils.Crypto;
-import dev.utils.CustomException;
+import dev.exceptions.CustomException;
 import dev.utils.Logger;
 import lombok.Getter;
 

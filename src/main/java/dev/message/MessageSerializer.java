@@ -3,7 +3,7 @@ package dev.message;
 import dev.message.payload.*;
 import dev.models.enums.MessageType;
 import dev.models.Message;
-import dev.utils.CustomException;
+import dev.exceptions.CustomException;
 import dev.utils.Utils;
 
 import java.util.regex.Pattern;

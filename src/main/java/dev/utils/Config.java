@@ -1,5 +1,7 @@
 package dev.utils;
 
+import dev.exceptions.CustomException;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;

@@ -9,7 +9,7 @@ import dev.message.MessageBuilder;
 import dev.models.PeerInfo;
 import dev.models.enums.CircuitStatus;
 import dev.utils.Crypto;
-import dev.utils.CustomException;
+import dev.exceptions.CustomException;
 import dev.utils.Logger;
 import dev.utils.Utils;
 import lombok.AllArgsConstructor;

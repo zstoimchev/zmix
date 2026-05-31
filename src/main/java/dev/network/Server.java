@@ -3,7 +3,7 @@ package dev.network;
 import dev.models.MessageQueue;
 import dev.models.enums.PeerDirection;
 import dev.utils.Config;
-import dev.utils.CustomException;
+import dev.exceptions.CustomException;
 import dev.utils.Logger;
 
 import java.io.IOException;
