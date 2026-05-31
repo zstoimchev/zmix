@@ -43,30 +43,6 @@ public class CircuitManager {
     private final Map<UUID, RelayCircuit> relayCircuits;
     private int currentHop = 0;
 
-    private String lastHtmlResponse = WELCOME_HTML;
-    private static final String WELCOME_HTML =
-        """
-        <html>
-            <body style="font-family: sans-serif; padding: 40px;">
-                <h1>Welcome to the P2P Network</h1>
-                <p>Type a URL above and press Search.</p>
-            </body>
-        </html>
-        """;
-
-    public synchronized String getLastHtmlResponse() {
-        return lastHtmlResponse;
-    }
-
-    private synchronized void setLastHtmlResponse(String html) {
-        lastHtmlResponse = html;
-        notifyAll();
-    }
-
-    public synchronized void waitForNewResponse() throws InterruptedException {
-        wait();
-    }
-
     public CircuitManager(NetworkManager networkManager) {
         this.logger = Logger.getLogger(CircuitManager.class);
         this.networkManager = networkManager;
