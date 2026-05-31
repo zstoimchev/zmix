@@ -43,7 +43,7 @@ public class PeerDiscoveryProtocol implements Protocol {
                 this::broadcastPeerRequest,
                 networkManager.getConfig().getConnectionMaintenanceInitialDelayInSeconds(),
                 networkManager.getConfig().getConnectionMaintenanceDelayInSeconds(),
-                TimeUnit.MINUTES);
+                TimeUnit.SECONDS);
     }
 
     private void handlePeerDiscoveryRequest(Peer peer, Message message) {

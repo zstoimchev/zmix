@@ -14,6 +14,14 @@ docker-compose up --build
 
 This will spin up few docker containers, with which circuit can be created and send requests.
 
+### Scale one or more nodes
+
+To run one node on multiple isntances, you can run the following command:
+
+```bash
+docker compose up --scale peer=100
+```
+
 [//]: # (## Prerequisites)
 
 [//]: # (## Installation)

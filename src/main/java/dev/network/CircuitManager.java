@@ -97,6 +97,7 @@ public class CircuitManager {
 
         if (this.entryPeer == null) {
             logger.error("Failed to connect to entry node");
+            this.circuitType = null;
             return;
         }
 
@@ -309,9 +310,15 @@ public class CircuitManager {
         String response = new String(decrypted, StandardCharsets.UTF_8);
 
         try {
-            String fileName = Utils.saveHttpResponseNaive(response);
+            String fileName = "responses/" + System.nanoTime() + ".html";
+            logger.info("""
+                    HTML response:\s
+                    = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =\s
+                    {}\s
+                    = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =""", response);
+            String html = Utils.saveHttpResponseNaive(response, fileName);
             logger.info("Saved HTTP response to file: {}", fileName);
-        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
             logger.error("Failed to save HTTP response to file", e);
             throw new RuntimeException(e);
         }

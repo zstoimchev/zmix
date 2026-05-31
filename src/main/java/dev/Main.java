@@ -3,7 +3,7 @@ package dev;
 import dev.models.MessageQueue;
 import dev.network.NetworkManager;
 import dev.network.Server;
-import dev.protocol.InputHandler;
+import dev.interfaces.Cli;
 import dev.protocol.MessageHandler;
 import dev.utils.Config;
 import dev.utils.Logger;
@@ -13,26 +13,25 @@ import java.util.concurrent.Executors;
 
 public class Main {
     private final Logger logger;
-    private final Config config;
     private final Server server;
     private final NetworkManager networkManager;
     private final MessageHandler messageHandler;
-    private final InputHandler inputHandler;
+    private final Cli inputHandler;
 
     // DI and registering all the configuration
-    public Main(String arg) {
+    public Main(String[] args) {
         this.logger = Logger.getLogger(Main.class);
-        this.config = Config.load(arg);
+        Config config = Config.load(args);
         MessageQueue queue = new MessageQueue();
         this.messageHandler = new MessageHandler(queue);
         ExecutorService executor = Executors.newCachedThreadPool();
         this.networkManager = new NetworkManager(config, messageHandler, queue, executor);
         this.server = new Server(config, queue, networkManager, executor);
-        this.inputHandler = new InputHandler(networkManager.getCircuitManager());
+        this.inputHandler = new Cli(networkManager);
     }
 
     public static void main(String[] args) {
-        new Main(args.length == 1 ? args[0] : "node.peer.properties").startNetwork();
+        new Main(args).startNetwork();
     }
 
     private void startNetwork() {

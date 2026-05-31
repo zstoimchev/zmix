@@ -7,36 +7,34 @@ services:
       - NODE_PORT=12137
     ports:
       - "12137:12137"
+    stdin_open: true
+    tty: true
     networks:
       - onion-network
 
-  peer1:
+  config-node:
     build: .
-    container_name: peer1
+    container_name: config-node
+    environment:
+      - BOOTSTRAP_HOST=bootstrap-node
+      - NODE_PORT=12128
+    ports:
+      - "12128:12128"
+    depends_on:
+      - bootstrap-node
+    stdin_open: true
+    tty: true
+    networks:
+      - onion-network
+
+  peer:
+    build: .
     environment:
       - BOOTSTRAP_HOST=bootstrap-node
     depends_on:
       - bootstrap-node
-    networks:
-      - onion-network
-
-  peer2:
-    build: .
-    container_name: peer2
-    environment:
-      - BOOTSTRAP_HOST=bootstrap-node
-    depends_on:
-      - bootstrap-node
-    networks:
-      - onion-network
-
-  peer3:
-    build: .
-    container_name: peer3
-    environment:
-      - BOOTSTRAP_HOST=bootstrap-node
-    depends_on:
-      - bootstrap-node
+    stdin_open: true
+    tty: true
     networks:
       - onion-network
 
