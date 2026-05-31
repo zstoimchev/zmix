@@ -82,18 +82,6 @@ public class Config {
         return Integer.parseInt(properties.getProperty("circuit.length", "3"));
     }
 
-    public boolean isGuiEnabled(String[] args) {
-        for (String arg : args) {
-            if (arg.equalsIgnoreCase("--gui")) return true;
-            if (arg.equalsIgnoreCase("--no-gui")) return false;
-        }
-
-        String envGui = System.getenv("GUI_ENABLED");
-        if (envGui != null) return Boolean.parseBoolean(envGui);
-
-        return Boolean.parseBoolean(properties.getProperty("gui.enabled", "false"));
-    }
-
     public int getConnectionRetryAttempts() {
         return Integer.parseInt(properties.getProperty("connection.retry.attempts", "10"));
     }
