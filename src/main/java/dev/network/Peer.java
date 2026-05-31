@@ -9,7 +9,6 @@ import dev.message.payload.HandshakePayload;
 import dev.message.MessageSerializer;
 import dev.models.enums.PeerDirection;
 import dev.utils.Crypto;
-import dev.exceptions.CustomException;
 import dev.utils.Logger;
 import lombok.Getter;
 
@@ -56,7 +55,7 @@ public class Peer implements Runnable {
             this.out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
         } catch (IOException e) {
             logger.error("Could not create input/output stream for peer. {}", e);
-            throw new CustomException("Could not create input/output stream for peer. {}", e);
+            throw new RuntimeException("Could not create input/output stream for peer.", e);
         }
     }
 
@@ -97,7 +96,7 @@ public class Peer implements Runnable {
             }
         } catch (Exception e) {
             logger.error("Error handling peer connection: {}", this.peerId, e);
-            throw new CustomException("Error handling peer connection: " + this.peerId, e);
+            throw new RuntimeException("Error handling peer connection: " + this.peerId, e);
         } finally {
             disconnect();
         }
@@ -178,7 +177,7 @@ public class Peer implements Runnable {
             logger.warn("Closed connection with peer: {}", this.peerId);
         } catch (IOException e) {
             logger.warn("Error closing connection with peer: {}", this.peerId, e);
-            throw new CustomException("Error closing connection with peer: " + this.peerId, e);
+            throw new RuntimeException("Error closing connection with peer: " + this.peerId, e);
         }
     }
 }

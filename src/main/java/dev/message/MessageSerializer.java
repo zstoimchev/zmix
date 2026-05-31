@@ -3,7 +3,6 @@ package dev.message;
 import dev.message.payload.*;
 import dev.models.enums.MessageType;
 import dev.models.Message;
-import dev.exceptions.CustomException;
 import dev.utils.Utils;
 
 import java.util.regex.Pattern;
@@ -20,7 +19,7 @@ public class MessageSerializer {
 
             case HANDSHAKE -> {
                 if (!(payload instanceof HandshakePayload hp))
-                    throw new CustomException("Expected HandshakePayload", null);
+                    throw new IllegalArgumentException("Payload is not a HandshakePayload");
 
                 byte[] bytes = hp.toBytes();
                 return Utils.encodeBytesToString(bytes);
@@ -32,7 +31,7 @@ public class MessageSerializer {
 
             case PEER_DISCOVERY_RESPONSE -> {
                 if (!(payload instanceof PeerResponsePayload prp))
-                    throw new CustomException("Expected PeerResponsePayload", null);
+                    throw new IllegalArgumentException("Payload is not a PeerResponsePayload");
 
                 byte[] bytes = prp.toBytes();
                 return Utils.encodeBytesToString(bytes);
@@ -40,7 +39,7 @@ public class MessageSerializer {
 
             case CIRCUIT_CREATE_REQUEST, CIRCUIT_CREATE_RESPONSE -> {
                 if (!(payload instanceof CircuitCreatePayload ccr))
-                    throw new CustomException("Expected CircuitCreatePayload", null);
+                    throw new IllegalArgumentException("Payload is not a CircuitCreatePayload");
 
                 byte[] bytes = ccr.toBytes();
                 return Utils.encodeBytesToString(bytes);
@@ -48,7 +47,7 @@ public class MessageSerializer {
 
             case CIRCUIT_EXTEND_REQUEST, CIRCUIT_EXTEND_RESPONSE -> {
                 if (!(payload instanceof CircuitExtendPayloadEncrypted cer))
-                    throw new CustomException("Expected CircuitExtendEncryptedPayload", null);
+                    throw new IllegalArgumentException("Payload is not a CircuitExtendPayloadEncrypted");
 
                 byte[] bytes = cer.toBytes();
                 return Utils.encodeBytesToString(bytes);
@@ -56,13 +55,13 @@ public class MessageSerializer {
 
             case DATA_TRANSFER_REQUEST, DATA_TRANSFER_RESPONSE -> {
                 if (!(payload instanceof CircuitDataPayload cdp))
-                    throw new CustomException("Expected DataTransferPayload", null);
+                    throw new IllegalArgumentException("Payload is not a CircuitDataPayload");
 
                 byte[] bytes = cdp.toBytes();
                 return Utils.encodeBytesToString(bytes);
             }
 
-            default -> throw new CustomException("Unexpected value: " + payload, null);
+            default -> throw new IllegalArgumentException("Unexpected message type: " + messageType);
         }
     }
 
@@ -90,7 +89,7 @@ public class MessageSerializer {
             case CIRCUIT_CREATE_REQUEST, CIRCUIT_CREATE_RESPONSE -> CircuitCreatePayload.fromBytes(data);
             case CIRCUIT_EXTEND_REQUEST, CIRCUIT_EXTEND_RESPONSE -> CircuitExtendPayloadEncrypted.fromBytes(data);
             case DATA_TRANSFER_REQUEST, DATA_TRANSFER_RESPONSE -> CircuitDataPayload.fromBytes(data);
-            default -> throw new CustomException("Unexpected value: " + messageType, null);
+            default -> throw new IllegalArgumentException("Unexpected message type: " + messageType);
         };
     }
 }

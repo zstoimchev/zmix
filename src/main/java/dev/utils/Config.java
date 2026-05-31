@@ -1,7 +1,5 @@
 package dev.utils;
 
-import dev.exceptions.CustomException;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
@@ -22,14 +20,14 @@ public class Config {
 
             if (in == null) {
                 logger.error("No config file was provided. Usage: java Main <config-file>");
-                throw new CustomException("Resource not found on classpath: " + filename, null);
+                throw new IllegalArgumentException("No config file was provided. Usage: java Main <config-file>");
             }
 
             properties.load(in);
 
         } catch (IOException e) {
             logger.error("Could not load config file: {}", filename, e);
-            throw new CustomException("Could not load file: " + filename, e);
+            throw new RuntimeException("Could not load config file: " + filename, e);
         }
 
         return new Config(properties);
