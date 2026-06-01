@@ -87,7 +87,7 @@ public class Peer implements Runnable {
                         disconnect();
                         break;
                     }
-                    logger.info("Received message of type {} from peer {}", message.getMessageType(), this.peerId);
+//                    logger.info("Received message of type {} from peer {}", message.getMessageType(), this.peerId);
                     messageQueue.getQueue().add(new Event(this, message));
                 } catch (IOException e) {
                     logger.error("Could not read message from peer: " + e.getMessage(), e);
@@ -162,7 +162,7 @@ public class Peer implements Runnable {
             synchronized (out) {
                 out.write(MessageSerializer.serialize(message) + "\n");
                 out.flush();
-                logger.info("Sent message of type {} to peer {}", message.getMessageType(), this.peerId);
+//                logger.info("Sent message of type {} to peer {}", message.getMessageType(), this.peerId);
             }
         } catch (IOException e) {
             logger.error("Could not send message to peer..." + e.getMessage());

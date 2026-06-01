@@ -28,7 +28,7 @@ public class MessageHandler extends Thread implements Protocol {
 
     public void registerProtocol(MessageType messageType, Protocol protocol) {
         protocolHandlers.put(messageType, protocol);
-        logger.debug("Registered protocol handler for: {}", messageType);
+//        logger.debug("Registered protocol handler for: {}", messageType);
     }
 
     @Override
