@@ -70,7 +70,6 @@ public class Logger {
         FILE_OUT = ps;
     }
 
-
     private static void log(Throwable t, String contextName, String message, LogLevel level) {
         String date = dateFormat.format(LocalDateTime.now());
         String threadName = Thread.currentThread().getName();
@@ -84,7 +83,7 @@ public class Logger {
             if (t != null) t.printStackTrace(FILE_OUT);
         }
 
-        if (!CONSOLE_ENABLED.get()) return;
+        if (!isConsoleEnabled() && isLowPriority(level)) return;
         System.out.println(plain);
         if (t != null) t.printStackTrace(System.err);
     }
@@ -99,6 +98,10 @@ public class Logger {
             case CRITICAL -> PURPLE + line + RESET;
             case ALERT, EMERGENCY -> RED + PURPLE + line + RESET;
         };
+    }
+
+    private static boolean isLowPriority(LogLevel level) {
+        return level == LogLevel.DEBUG || level == LogLevel.INFO || level == LogLevel.NOTICE || level == LogLevel.WARNING;
     }
 
     /* ********************************************************* *

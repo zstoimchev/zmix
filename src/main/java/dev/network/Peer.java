@@ -25,9 +25,9 @@ public class Peer implements Runnable {
     private final Socket socket;
     private final PeerDirection peerDirection;
     @Getter
-    private final String ip;
+    public final String ip;
     @Getter
-    private int port;
+    public int port;
     private final NetworkManager networkManager;
     private final MessageQueue messageQueue;
     private final BufferedReader in;
