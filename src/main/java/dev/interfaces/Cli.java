@@ -40,6 +40,7 @@ public class Cli extends Thread {
     private void processRequest(String input) {
         switch (input) {
             case "\\h":
+                Logger.disableConsole();
                 printHelp();
                 return;
             case "\\d":
@@ -63,6 +64,7 @@ public class Cli extends Thread {
                 return;
         }
 
+        Logger.enableConsole();
         if (isUrlValid(input)) circuitManager.sendRequestToQueue(input);
         else logger.error("Invalid URL. Must start with http:// or https://");
     }
@@ -80,7 +82,6 @@ public class Cli extends Thread {
     }
 
     private void printHelp() {
-        Logger.disableConsole();
         System.out.println("=========================================================");
         System.out.println(" * Available commands:");
         System.out.println(" -> \\h (HELP)  - Show help");
