@@ -1,7 +1,16 @@
 package dev.utils;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Logger {
@@ -35,6 +44,32 @@ public class Logger {
         return CONSOLE_ENABLED.get();
     }
 
+    private static final PrintStream FILE_OUT;
+
+    static {
+        PrintStream ps = null;
+
+        try {
+            Properties properties = new Properties();
+            try (InputStream in = Logger.class.getResourceAsStream("/logger.properties")) {
+                if (in != null) properties.load(in);
+            }
+
+            String logDirectory = properties.getProperty("logger.directory", "logs");
+            Files.createDirectories(Paths.get(logDirectory));
+
+            String prefix = properties.getProperty("logger.prefix", "zmix");
+            String fileName = prefix + "-" + LocalDate.now() + ".log";
+
+            Path logFile = Paths.get(logDirectory, fileName);
+            ps = new PrintStream(new FileOutputStream(logFile.toFile(), true),true);
+        } catch (IOException e) {
+            System.err.println("[Logger] Could not open log file: " + e.getMessage());
+        }
+
+        FILE_OUT = ps;
+    }
+
 
     private static void log(Throwable t, String contextName, String message, LogLevel level) {
         String date = dateFormat.format(LocalDateTime.now());
@@ -44,7 +79,10 @@ public class Logger {
         String prefix = "[" + date + "][" + threadName + "]" + context + " " + level + ": ";
         String plain = colorize(prefix, level) + message;
 
-        // todo: write in file here
+        if (FILE_OUT != null) {
+            FILE_OUT.println(prefix + message);
+            if (t != null) t.printStackTrace(FILE_OUT);
+        }
 
         if (!CONSOLE_ENABLED.get()) return;
         System.out.println(plain);
