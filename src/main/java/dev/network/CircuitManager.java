@@ -408,6 +408,30 @@ public class CircuitManager {
         return circuitType == CircuitStatus.ACTIVE && currentHop == circuitLength;
     }
 
+    public void destroyCircuitOnPeerDisconnect(Peer peer) {
+        if (path == null || circuitType == null) return;
+
+        boolean containsPeer = path.stream()
+                .anyMatch(peerInfo ->
+                                peerInfo.getHost().equals(peer.getIp()) &&
+                                peerInfo.getPort() == peer.getPort() &&
+                                peerInfo.getPublicKey().equals(peer.getPublicKeyEncoded())
+                );
+
+        logger.warn("Destroying circuit {} because peer {} disconnected.", this.myCircuitId, peer.getPeerId());
+        if (containsPeer) destroyCircuit();
+    }
+
+    private void destroyCircuit() {
+        this.myCircuitId = null;
+        this.path = null;
+        this.entryPeer = null;
+        this.circuitType = null;
+        this.currentHop = 0;
+        this.keys.clear();
+        this.pendingKeys.clear();
+    }
+
     @AllArgsConstructor
     private static class RelayCircuit {
         Peer previousHop;
