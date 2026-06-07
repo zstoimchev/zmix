@@ -64,9 +64,8 @@ public class Cli extends Thread {
                 return;
         }
 
-        Logger.enableConsole();
         if (isUrlValid(input)) circuitManager.sendRequestToQueue(input);
-        else logger.error("Invalid URL. Must start with http:// or https://");
+        else logger.printToConsole("Invalid URL. Must start with http:// or https://");
     }
 
     private boolean isUrlValid(String url) {
@@ -82,30 +81,46 @@ public class Cli extends Thread {
     }
 
     private void printHelp() {
-        System.out.println("=========================================================");
-        System.out.println(" * Available commands:");
-        System.out.println(" -> \\h (HELP)  - Show help");
-        System.out.println(" -> \\s (STATS) - Show node statistics");
-        System.out.println(" -> \\p (PEERS) - Show connected peers");
-        System.out.println(" -> \\r (ROUTE) - Show active circuits and their routes");
-        System.out.println(" -> \\q (QUIT)  - Exit application");
-        System.out.println("=========================================================");
+        logger.printToConsole("""
+                ====================================================================================================
+                Welcome to the CLI help menu!
+                You can enter a URL to send a request through the network, or use one of the following commands:
+                 -> \\h (HELP)  - Show help
+                 -> \\s (STATS) - Show node statistics
+                 -> \\p (PEERS) - Show connected peers
+                 -> \\r (ROUTE) - Show active circuits and their routes
+                 -> \\q (QUIT)  - Exit application
+                Note: When entering a URL, it must start with http:// or https://
+                ====================================================================================================
+                """);
     }
 
     private void printStats() {
-        System.out.println("=========================================================");
-        System.out.println(" * There are:");
-        System.out.println(" -> " + networkManager.getKnownPeerCount() + " known peers;");
-        System.out.println(" -> " + networkManager.getConnectedPeerCount() + " connected peers;");
-        System.out.println("=========================================================");
+        logger.printToConsole("""
+                =========================================================
+                There are:
+                 -> {} known peers
+                 -> {} connected peers
+                =========================================================
+                """, networkManager.getKnownPeerCount(), networkManager.getConnectedPeerCount());
     }
 
     private void printPeers() {
-        System.out.println("=========================================================");
-        System.out.println(" * Connected peers:");
+        StringBuilder sb = new StringBuilder("""
+            =========================================================
+            The connected peers are:
+            """);
+
         networkManager.getConnectedPeers().forEach((uuid, peer) ->
-                System.out.println(" -> " + peer.getIp() + ":" + peer.getPort() + ")"));
-        System.out.println("=========================================================");
+                sb.append(" -> ")
+                        .append(peer.getIp())
+                        .append(':')
+                        .append(peer.getPort())
+                        .append('\n'));
+
+        sb.append("=========================================================\n");
+
+        logger.printToConsole(sb.toString());
     }
 
     private void printCircuitRoutes() {

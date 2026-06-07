@@ -311,7 +311,7 @@ public class CircuitManager {
 
         try {
             String fileName = "responses/" + System.nanoTime() + ".html";
-            logger.info("""
+            logger.printToConsole("""
                     HTML response:\s
                     = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =\s
                     {}\s

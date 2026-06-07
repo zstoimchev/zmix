@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Logger {
     private static final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    public enum LogLevel {DEBUG, INFO, NOTICE, WARNING, ERROR, CRITICAL, ALERT, EMERGENCY}
+    public enum LogLevel {DEBUG, INFO, NOTICE, WARNING, ERROR, CRITICAL, ALERT, EMERGENCY, USER_SPACE}
     private final String contextName;
 
     private static final String RED = "\u001B[31m";
@@ -46,6 +46,7 @@ public class Logger {
 
     private static final PrintStream FILE_OUT;
 
+    // invoked only once, when the application starts
     static {
         PrintStream ps = null;
 
@@ -71,6 +72,11 @@ public class Logger {
     }
 
     private static void log(Throwable t, String contextName, String message, LogLevel level) {
+        if (level == LogLevel.USER_SPACE) {
+            System.out.println(message);
+            return;
+        }
+
         String date = dateFormat.format(LocalDateTime.now());
         String threadName = Thread.currentThread().getName();
 
@@ -90,6 +96,7 @@ public class Logger {
 
     private static String colorize(String line, LogLevel level) {
         return switch (level) {
+            case USER_SPACE -> line;
             case DEBUG -> CYAN + line + RESET;
             case INFO -> GREEN + line + RESET;
             case NOTICE -> BLUE + line + RESET;
@@ -101,7 +108,10 @@ public class Logger {
     }
 
     private static boolean isLowPriority(LogLevel level) {
-        return level == LogLevel.DEBUG || level == LogLevel.INFO || level == LogLevel.NOTICE || level == LogLevel.WARNING;
+        return switch (level) {
+            case USER_SPACE, DEBUG, INFO, NOTICE, WARNING -> true;
+            default -> false;
+        };
     }
 
     /* ********************************************************* *
@@ -146,6 +156,10 @@ public class Logger {
 
     public void emergency(Throwable t, String message, Object... args) {
         log(t, contextName, format(message, args), LogLevel.EMERGENCY);
+    }
+
+    public void printToConsole(String message, Object... args) {
+        log(null,  contextName, format(message, args), LogLevel.USER_SPACE);
     }
 
     private static String format(String template, Object... args) {
