@@ -134,10 +134,11 @@ public class NetworkManager {
         }
     }
 
+    // GPT helper understand the exponential back-off, specifically how to define timeout interval
     public void connectToPeer(String ip, int port) {
         int attempts = config.getConnectionRetryAttempts();
-        int retries = 0;
-        while (retries++ < attempts) {
+
+        for (int retries = 1; retries < attempts; retries++) {
             try {
                 Socket socket = new Socket();
                 socket.connect(new InetSocketAddress(ip, port), config.getConnectionTimeoutInMilliseconds());
@@ -145,13 +146,14 @@ public class NetworkManager {
                 peerExecutor.submit(new Peer(socket, queue, this, PeerDirection.OUTBOUND));
                 return;
             } catch (IOException e) {
+//                if (retries == attempts) break;
+                long timeout = (1L << (retries - 1)) * 100;
+                logger.warn("Failed connecting to {}:{} (attempt {}/{}). Retrying in {}ms...", ip, port, retries, attempts, timeout);
                 try {
-                    long timeout = (1L << (retries - 1)) * 100;
-                    logger.warn("Failed connecting to {}:{} (attempt {}/{}). Retrying in {}ms...", ip, port, retries, attempts, timeout);
-                    if (retries == attempts) continue;
                     Thread.sleep(timeout);
                 } catch (InterruptedException ex) {
                     logger.error("Interrupted while waiting for outbound node.", ex);
+//                    Thread.currentThread().interrupt(); // figure out why
                     return;
                 }
             }
