@@ -105,7 +105,7 @@ public class NetworkManager {
         }
 
         addConnectedPeer(peer);
-        logger.info("Registered peer: {}", peer.getPeerId());
+        logger.info("Registered peer: {}, {}:{}", peer.getPeerId(), peer.getIp(), peer.getPort());
     }
 
     public void unregisterPeer(Peer peer) {
@@ -128,7 +128,7 @@ public class NetworkManager {
 
         for (PeerInfo info : candidates) {
             logger.info("Trying to connect to peer: {}:{}", info.host, info.port);
-            if (connectedPeers.size() > config.getMinConnections()) break;
+            if (connectedPeers.size() > config.getMaxConnections()) break;
             peerExecutor.submit(() -> connectToPeer(info.host, info.port));
         }
     }

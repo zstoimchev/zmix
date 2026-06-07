@@ -31,7 +31,6 @@ public class Cli extends Thread {
             return;
         }
         while (!this.isInterrupted()) {
-            logger.info("Enter URL to send request: ");
             String input = scanner.nextLine();
             processRequest(input);
         }
@@ -39,8 +38,34 @@ public class Cli extends Thread {
     }
 
     private void processRequest(String input) {
+        switch (input) {
+            case "\\h":
+                Logger.disableConsole();
+                printHelp();
+                return;
+            case "\\d":
+                Logger.disableConsole();
+                return;
+            case "\\c":
+                Logger.enableConsole();
+                return;
+            case "\\s":
+                printStats();
+                return;
+            case "\\p":
+                printPeers();
+                return;
+            case "\\r":
+                printCircuitRoutes();
+                return;
+            case "\\q":
+                logger.info("Exiting application...");
+                System.exit(0);
+                return;
+        }
+
         if (isUrlValid(input)) circuitManager.sendRequestToQueue(input);
-        else logger.error("Invalid URL. Must start with http:// or https://");
+        else logger.printToConsole("Invalid URL. Must start with http:// or https://");
     }
 
     private boolean isUrlValid(String url) {
@@ -53,5 +78,52 @@ public class Cli extends Thread {
         } catch (URISyntaxException e) {
             return false;
         }
+    }
+
+    private void printHelp() {
+        logger.printToConsole("""
+                ====================================================================================================
+                Welcome to the CLI help menu!
+                You can enter a URL to send a request through the network, or use one of the following commands:
+                 -> \\h (HELP)  - Show help
+                 -> \\s (STATS) - Show node statistics
+                 -> \\p (PEERS) - Show connected peers
+                 -> \\r (ROUTE) - Show active circuits and their routes
+                 -> \\q (QUIT)  - Exit application
+                Note: When entering a URL, it must start with http:// or https://
+                ====================================================================================================
+                """);
+    }
+
+    private void printStats() {
+        logger.printToConsole("""
+                =========================================================
+                There are:
+                 -> {} known peers
+                 -> {} connected peers
+                =========================================================
+                """, networkManager.getKnownPeerCount(), networkManager.getConnectedPeerCount());
+    }
+
+    private void printPeers() {
+        StringBuilder sb = new StringBuilder("""
+            =========================================================
+            The connected peers are:
+            """);
+
+        networkManager.getConnectedPeers().forEach((uuid, peer) ->
+                sb.append(" -> ")
+                        .append(peer.getIp())
+                        .append(':')
+                        .append(peer.getPort())
+                        .append('\n'));
+
+        sb.append("=========================================================\n");
+
+        logger.printToConsole(sb.toString());
+    }
+
+    private void printCircuitRoutes() {
+
     }
 }

@@ -3,7 +3,6 @@ package dev.network;
 import dev.models.MessageQueue;
 import dev.models.enums.PeerDirection;
 import dev.utils.Config;
-import dev.utils.CustomException;
 import dev.utils.Logger;
 
 import java.io.IOException;
@@ -45,10 +44,10 @@ public class Server extends Thread {
             }
         } catch (BindException e) {
             logger.error("Port " + config.getNodePort() + " is already in use.", e);
-            throw new CustomException("Port already in use: " + config.getNodePort(), e);
+            throw new RuntimeException("Port " + config.getNodePort() + " is already in use.", e);
         } catch (IOException e) {
             logger.error("Could not start the server.", e);
-            throw new CustomException("Could not start the server.", e);
+            throw new  RuntimeException("Could not start the server.", e);
         } finally {
             shutdown();
         }

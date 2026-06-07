@@ -9,7 +9,6 @@ import dev.message.MessageBuilder;
 import dev.models.PeerInfo;
 import dev.models.enums.CircuitStatus;
 import dev.utils.Crypto;
-import dev.utils.CustomException;
 import dev.utils.Logger;
 import dev.utils.Utils;
 import lombok.AllArgsConstructor;
@@ -84,7 +83,8 @@ public class CircuitManager {
 
         if (availablePeers.size() < circuitLength) {
             logger.error("Not enough connected peers to build circuit. Connected: {}, Required: {}", availablePeers.size(), circuitLength);
-            throw new CustomException("Not enough peers for circuit. Have: " + availablePeers.size() + ", Need: " + circuitLength, null);
+            return null;
+            // throw new RuntimeException("Not enough connected peers to build circuit. Connected: " + availablePeers.size() + ", Required: " + circuitLength);
         }
 
         Collections.shuffle(availablePeers);
@@ -276,7 +276,7 @@ public class CircuitManager {
                 relay.previousHop.send(responseMessage);
                 return;
             } catch (IOException e) {
-                throw new CustomException("Failed to send as exit node", e);
+                throw new RuntimeException("Failed to send the request as an exit node ", e);
             }
         }
 
@@ -311,7 +311,7 @@ public class CircuitManager {
 
         try {
             String fileName = "responses/" + System.nanoTime() + ".html";
-            logger.info("""
+            logger.printToConsole("""
                     HTML response:\s
                     = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =\s
                     {}\s

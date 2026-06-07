@@ -1,46 +1,81 @@
-# Zmix - Java based Peer to peer Network / Onion Routing
+# ZMIX — Peer-to-Peer Onion Routing
 
-This project is an implementation of a simple Peer to Peer Network (Onion Routing) in Java. It's designed to provide a basic understanding of how peer to peer technology works.
+A Java 21 implementation of onion routing over a self-organizing peer-to-peer network. Each node discovers peers via gossip, builds multi-hop circuits using ECDH key exchange, and anonymizes HTTP traffic through layered AES-256-GCM encryption.
 
-[//]: # (## Features)
+## Prerequisites
 
-## Getting started
+- Java 21
+- Maven 3.8+ (for local builds)
+- Docker + Docker Compose (for containerized setup)
 
-To quickly get started with the network, docker-compose is used to build and run the Java application inside a Docker container. You simply need to run:
+## Running with Docker
 
-```bash
-docker-compose up --build
-```
-
-This will spin up few docker containers, with which circuit can be created and send requests.
-
-### Scale one or more nodes
-
-To run one node on multiple isntances, you can run the following command:
+The easiest way to get the network running is with Docker Compose. This builds all nodes from the same image and connects them automatically.
 
 ```bash
-docker compose up --scale peer=100
+docker-compose up --build --scale peer=10 -d
 ```
 
-[//]: # (## Prerequisites)
+This starts:
+- `bootstrap-node` - the seed node on port 12137
+- `config-node` - a peer on port 12128, used for sending requests
+- `peer` - one relay node (scaled to 10 in the command above)
 
-[//]: # (## Installation)
+To attach to the `config-node` (or any other peer) and send an HTTP request:
 
-[//]: # (## Usage)
+```bash
+docker attach config-node
+```
 
-[//]: # (## Contributing)
+Then type a URL and press Enter:
 
-## Acknowledgements
+```
+http://example.com
+```
 
-[//]: # (This project is part of the Programming III Course at UP FAMNIT in the academic 2025/26 year, supervised by Assistant Professor dr. Aleksandar Tošić and Assistant Domen Vake. Special thanks to them for their support and guidance.)
+The response HTML is displayed in the console, as well as saved to the `responses/` directory.
 
-[//]: # (## References)
+## Running Locally
+
+Build the fat JAR first:
+
+```bash
+mvn package
+```
+
+Then start the bootstrap node and at least three more peers in separate terminals:
+
+```bash
+java -jar target/zmix-1.0-SNAPSHOT.jar node.bootstrap.properties
+java -jar target/zmix-1.0-SNAPSHOT.jar node.peer.test1.properties
+java -jar target/zmix-1.0-SNAPSHOT.jar node.peer.test2.properties
+java -jar target/zmix-1.0-SNAPSHOT.jar node.peer.test3.properties
+```
+
+Once enough peers have connected and the circuit is established, type a URL into any peer's terminal to send a request through the network.
+
+IntelliJ run configurations for all nodes are included under `.idea/runConfigurations/`.
+
+## Configuration
+
+Each node is configured via a `.properties` file passed as the first argument. Key properties:
+
+| Property | Default | Description                       |
+|---|---|-----------------------------------|
+| `node.port` | `12137` | TCP port the node listens on      |
+| `node.bootstrap` | `false` | Set to `true` for the seed node   |
+| `bootstrap.host` | `localhost` | Bootstrap node hostname           |
+| `bootstrap.port` | `12137` | Bootstrap node port                    |
+| `circuit.length` | `3` | Number of hops per circuit        |
+| `node.connections.max` | `5` | Max simultaneous peer connections |
+| `node.connections.min` | `3` | Minimum connection target         |
+
+Environment variables `NODE_PORT`, `NODE_BOOTSTRAP`, and `BOOTSTRAP_HOST` override the properties file values and are used by Docker Compose.
 
 ## Contact
 
-You can reach me at: [zstoimchev@outlook.com](mailto:zstoimchev@outlook.com)
+[zstoimchev@outlook.com](mailto:zstoimchev@outlook.com)
 
 ## License
 
-This is built by me and myself only. So... \
 © 2026 Zhivko Stoimchev. All rights reserved.

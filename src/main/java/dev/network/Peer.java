@@ -9,7 +9,6 @@ import dev.message.payload.HandshakePayload;
 import dev.message.MessageSerializer;
 import dev.models.enums.PeerDirection;
 import dev.utils.Crypto;
-import dev.utils.CustomException;
 import dev.utils.Logger;
 import lombok.Getter;
 
@@ -26,9 +25,9 @@ public class Peer implements Runnable {
     private final Socket socket;
     private final PeerDirection peerDirection;
     @Getter
-    private final String ip;
+    public final String ip;
     @Getter
-    private int port;
+    public int port;
     private final NetworkManager networkManager;
     private final MessageQueue messageQueue;
     private final BufferedReader in;
@@ -56,7 +55,7 @@ public class Peer implements Runnable {
             this.out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
         } catch (IOException e) {
             logger.error("Could not create input/output stream for peer. {}", e);
-            throw new CustomException("Could not create input/output stream for peer. {}", e);
+            throw new RuntimeException("Could not create input/output stream for peer.", e);
         }
     }
 
@@ -88,7 +87,7 @@ public class Peer implements Runnable {
                         disconnect();
                         break;
                     }
-                    logger.info("Received message of type {} from peer {}", message.getMessageType(), this.peerId);
+                    logger.debug("Received message of type {} from peer {}", message.getMessageType(), this.peerId);
                     messageQueue.getQueue().add(new Event(this, message));
                 } catch (IOException e) {
                     logger.error("Could not read message from peer: " + e.getMessage(), e);
@@ -97,7 +96,7 @@ public class Peer implements Runnable {
             }
         } catch (Exception e) {
             logger.error("Error handling peer connection: {}", this.peerId, e);
-            throw new CustomException("Error handling peer connection: " + this.peerId, e);
+            throw new RuntimeException("Error handling peer connection: " + this.peerId, e);
         } finally {
             disconnect();
         }
@@ -148,7 +147,7 @@ public class Peer implements Runnable {
         }
 
         if (!(message.getPayload() instanceof HandshakePayload handshakePayload)) return false;
-        logger.info("Received message of type {} from peer {}", message.getMessageType(), this.peerId);
+        logger.debug("Received message of type {} from peer {}", message.getMessageType(), this.peerId);
 
         this.publicKeyEncoded = handshakePayload.getPublicKeyEncoded();
         this.publicKey = Crypto.decodePublicKey(handshakePayload.getPublicKeyEncoded());
@@ -163,7 +162,7 @@ public class Peer implements Runnable {
             synchronized (out) {
                 out.write(MessageSerializer.serialize(message) + "\n");
                 out.flush();
-                logger.info("Sent message of type {} to peer {}", message.getMessageType(), this.peerId);
+                logger.debug("Sent message of type {} to peer {}", message.getMessageType(), this.peerId);
             }
         } catch (IOException e) {
             logger.error("Could not send message to peer..." + e.getMessage());
@@ -178,7 +177,7 @@ public class Peer implements Runnable {
             logger.warn("Closed connection with peer: {}", this.peerId);
         } catch (IOException e) {
             logger.warn("Error closing connection with peer: {}", this.peerId, e);
-            throw new CustomException("Error closing connection with peer: " + this.peerId, e);
+            throw new RuntimeException("Error closing connection with peer: " + this.peerId, e);
         }
     }
 }

@@ -20,14 +20,14 @@ public class Config {
 
             if (in == null) {
                 logger.error("No config file was provided. Usage: java Main <config-file>");
-                throw new CustomException("Resource not found on classpath: " + filename, null);
+                throw new IllegalArgumentException("No config file was provided. Usage: java Main <config-file>");
             }
 
             properties.load(in);
 
         } catch (IOException e) {
             logger.error("Could not load config file: {}", filename, e);
-            throw new CustomException("Could not load file: " + filename, e);
+            throw new RuntimeException("Could not load config file: " + filename, e);
         }
 
         return new Config(properties);
@@ -78,18 +78,6 @@ public class Config {
 
     public int getCircuitLength() {
         return Integer.parseInt(properties.getProperty("circuit.length", "3"));
-    }
-
-    public boolean isGuiEnabled(String[] args) {
-        for (String arg : args) {
-            if (arg.equalsIgnoreCase("--gui")) return true;
-            if (arg.equalsIgnoreCase("--no-gui")) return false;
-        }
-
-        String envGui = System.getenv("GUI_ENABLED");
-        if (envGui != null) return Boolean.parseBoolean(envGui);
-
-        return Boolean.parseBoolean(properties.getProperty("gui.enabled", "false"));
     }
 
     public int getConnectionRetryAttempts() {
