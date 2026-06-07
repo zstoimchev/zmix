@@ -110,6 +110,7 @@ public class NetworkManager {
 
     public void unregisterPeer(Peer peer) {
         removeConnectedPeer(peer);
+        circuitManager.destroyCircuitOnPeerDisconnect(peer);
         logger.info("Unregistered peer: {}", peer.getPeerId());
     }
 
