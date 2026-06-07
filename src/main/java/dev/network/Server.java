@@ -30,7 +30,8 @@ public class Server extends Thread {
 
     @Override
     public void run() {
-        try (ServerSocket serverSocket = new ServerSocket(config.getNodePort())) {
+        int backlog = config.getMaxConnections();
+        try (ServerSocket serverSocket = new ServerSocket(config.getNodePort(), backlog)) {
             logger.info("Server started and waiting for connections on port " + config.getNodePort());
             if (!config.isBootstrapNode()) peerExecutor.submit(this::connectToBootstrapNodes);
 
