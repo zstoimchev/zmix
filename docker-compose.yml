@@ -10,13 +10,14 @@ services:
     stdin_open: true
     tty: true
     networks:
-      - onion-network
+      onion-network:
+        ipv4_address: 10.12.137.21
 
   config-node:
     build: .
     container_name: config-node
     environment:
-      - BOOTSTRAP_HOST=bootstrap-node
+      - BOOTSTRAP_HOST=10.12.137.21
       - NODE_PORT=12128
     ports:
       - "12128:12128"
@@ -30,7 +31,7 @@ services:
   peer:
     build: .
     environment:
-      - BOOTSTRAP_HOST=bootstrap-node
+      - BOOTSTRAP_HOST=10.12.137.21
     depends_on:
       - bootstrap-node
     stdin_open: true
@@ -41,3 +42,7 @@ services:
 networks:
   onion-network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 10.12.137.0/24
+          gateway: 10.12.137.1
