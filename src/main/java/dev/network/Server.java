@@ -10,6 +10,7 @@ import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class Server extends Thread {
     private final Logger logger;
@@ -56,6 +57,12 @@ public class Server extends Thread {
     }
 
     private void connectToBootstrapNodes() {
+        try {
+            Thread.sleep(ThreadLocalRandom.current().nextInt(0, 1000 * 30));
+        } catch (InterruptedException e) {
+            logger.alert(e, "Connection initialization cooldown timeout interrupted...");
+        }
+
         logger.info("Connecting to the bootstrap node at {}:{}", config.getBootstrapNodeHost(), config.getBootstrapNodePort());
         networkManager.connectToPeer(config.getBootstrapNodeHost(), config.getBootstrapNodePort());
     }
