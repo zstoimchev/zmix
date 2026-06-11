@@ -432,6 +432,17 @@ public class CircuitManager {
         this.pendingKeys.clear();
     }
 
+    public String printCircuitPath() {
+        if (path == null || path.isEmpty()) return "No active circuit.";
+
+        String circuit = path.stream()
+                .map(peer -> peer.getHost() + ":" + peer.getPort())
+                .reduce((a, b) -> a + " -> " + b)
+                .orElse("empty");
+
+        return "Circuit " + myCircuitId + ": " + circuit;
+    }
+
     @AllArgsConstructor
     private static class RelayCircuit {
         Peer previousHop;

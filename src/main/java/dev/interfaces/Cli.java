@@ -124,6 +124,11 @@ public class Cli extends Thread {
     }
 
     private void printCircuitRoutes() {
-
+        logger.printToConsole("""
+                =========================================================
+                Active circuits and their routes:
+                 -> {}
+                =========================================================
+                """, circuitManager.printCircuitPath());
     }
 }
