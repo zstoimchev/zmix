@@ -434,11 +434,9 @@ public class CircuitManager {
 
     public String getMyCircuitRoute() {
         if (path == null || path.isEmpty()) return "No active circuit.";
-
-        return path.stream()
-                .map(peer -> peer.getHost() + ":" + peer.getPort())
-                .reduce((a, b) -> a + " -> " + b)
-                .orElse("empty");
+        StringBuilder sb = new StringBuilder();
+        path.forEach(peer -> sb.append(" -> ").append(peer.getHost()).append(":").append(peer.getPort()));
+        return "ME" + sb + " -> EXIT";
     }
 
     public String getRelayCircuitRoutes() {
