@@ -408,6 +408,51 @@ public class CircuitManager {
         return circuitType == CircuitStatus.ACTIVE && currentHop == circuitLength;
     }
 
+    public void destroyCircuitOnPeerDisconnect(Peer peer) {
+        if (path == null || circuitType == null) return;
+
+        boolean containsPeer = path.stream()
+                .anyMatch(peerInfo ->
+                                peerInfo.getHost().equals(peer.getIp()) &&
+                                peerInfo.getPort() == peer.getPort() &&
+                                peerInfo.getPublicKey().equals(peer.getPublicKeyEncoded())
+                );
+
+        logger.warn("Destroying circuit {} because peer {} disconnected.", this.myCircuitId, peer.getPeerId());
+        if (containsPeer) destroyCircuit();
+    }
+
+    private void destroyCircuit() {
+        this.myCircuitId = null;
+        this.path = null;
+        this.entryPeer = null;
+        this.circuitType = null;
+        this.currentHop = 0;
+        this.keys.clear();
+        this.pendingKeys.clear();
+    }
+
+    public String getMyCircuitRoute() {
+        if (path == null || path.isEmpty()) return "No active circuit.";
+        StringBuilder sb = new StringBuilder();
+        path.forEach(peer -> sb.append(" -> ").append(peer.getHost()).append(":").append(peer.getPort()));
+        return "ME" + sb + " -> EXIT";
+    }
+
+    public String getRelayCircuitRoutes() {
+        if (relayCircuits.isEmpty()) return "No relay circuits yet.";
+
+        StringBuilder sb = new StringBuilder();
+
+        relayCircuits.forEach((id, relay) -> {
+            String prev = relay.previousHop != null ? relay.previousHop.getIp() + ":" + relay.previousHop.getPort() : "NULL";
+            String next = relay.nextHop != null ? relay.nextHop.getIp() + ":" + relay.nextHop.getPort() : "EXIT";
+            sb.append(prev).append(" -> ME -> ").append(next).append(", \t");
+        });
+
+        return sb.toString();
+    }
+
     @AllArgsConstructor
     private static class RelayCircuit {
         Peer previousHop;

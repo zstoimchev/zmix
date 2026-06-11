@@ -124,6 +124,17 @@ public class Cli extends Thread {
     }
 
     private void printCircuitRoutes() {
+        String myCircuitRoute = circuitManager.getMyCircuitRoute();
+        String relayCircuitRoutes = circuitManager.getRelayCircuitRoutes();
 
+        logger.printToConsole("""
+                =========================================================
+                Active circuits and their routes (mine):
+                 -> {}
+                ---------------------------------------------------------
+                Active circuits and their routes (relay):
+                 -> {}
+                =========================================================
+                """, myCircuitRoute, relayCircuitRoutes);
     }
 }

@@ -10,6 +10,7 @@ import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class Server extends Thread {
     private final Logger logger;
@@ -30,16 +31,18 @@ public class Server extends Thread {
 
     @Override
     public void run() {
-        try (ServerSocket serverSocket = new ServerSocket(config.getNodePort())) {
+        int backlog = config.getMaxConnections();
+        try (ServerSocket serverSocket = new ServerSocket(config.getNodePort(), backlog)) {
             logger.info("Server started and waiting for connections on port " + config.getNodePort());
             if (!config.isBootstrapNode()) peerExecutor.submit(this::connectToBootstrapNodes);
 
             while (!this.isInterrupted()) {
                 Socket clientSocket = serverSocket.accept();
-                logger.info("======= New connection: =======");
-                logger.info("  -> Remote IP:   " + clientSocket.getInetAddress().getHostAddress());
-                logger.info("  -> Remote Port: " + clientSocket.getPort());
-                logger.info("===============================");
+                logger.info("""
+                        =========== New connection: ===========
+                         -> Remote IP: {}:{}
+                        =======================================
+                        """,  clientSocket.getInetAddress().getHostAddress(), clientSocket.getPort());
                 peerExecutor.submit(new Peer(clientSocket, queue, networkManager, PeerDirection.INBOUND));
             }
         } catch (BindException e) {
@@ -54,6 +57,12 @@ public class Server extends Thread {
     }
 
     private void connectToBootstrapNodes() {
+        try {
+            Thread.sleep(ThreadLocalRandom.current().nextInt(0, 1000 * 30));
+        } catch (InterruptedException e) {
+            logger.alert(e, "Connection initialization cooldown timeout interrupted...");
+        }
+
         logger.info("Connecting to the bootstrap node at {}:{}", config.getBootstrapNodeHost(), config.getBootstrapNodePort());
         networkManager.connectToPeer(config.getBootstrapNodeHost(), config.getBootstrapNodePort());
     }

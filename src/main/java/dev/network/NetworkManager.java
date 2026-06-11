@@ -98,8 +98,9 @@ public class NetworkManager {
 
         if (getConnectedPeerCount() >= config.getMaxConnections()) {
             logger.warn("Max peers reached. Cannot register new peer: {}", peer.getPeerId());
-            Collections.shuffle(getKnownPeers());
-            peer.send(MessageBuilder.buildPeerResponseMessage(getKnownPeers().stream().limit(5).toList()));
+            List<PeerInfo> sample = new ArrayList<>(getKnownPeers());
+            Collections.shuffle(sample);
+            peer.send(MessageBuilder.buildPeerResponseMessage(sample.stream().limit(config.getMinConnections()).toList()));
             peer.disconnect();
             return;
         }
@@ -110,6 +111,7 @@ public class NetworkManager {
 
     public void unregisterPeer(Peer peer) {
         removeConnectedPeer(peer);
+        circuitManager.destroyCircuitOnPeerDisconnect(peer);
         logger.info("Unregistered peer: {}", peer.getPeerId());
     }
 
@@ -117,26 +119,35 @@ public class NetworkManager {
         logger.info("   >-->   Connected: {} | Known: {}   <--<", getConnectedPeers().size(), getKnownPeers().size());
         if (getConnectedPeerCount() >= config.getMaxConnections()) return;
 
-        List<PeerInfo> candidates = new ArrayList<>(knownPeers
-                .stream()
-                .filter(peer -> !connectedPeers
-                        .containsKey(peer.getPublicKey()) && !peer.getPublicKey()
-                        .equals(encodedPublicKey))
-                .toList());
+        if (!config.isBootstrapNode() && getConnectedPeerCount() == 0) {
+            logger.info("Isolated peer. Retrying bootstrap on {}:{}", config.getBootstrapNodeHost(), config.getBootstrapNodePort());
+            peerExecutor.submit(() -> connectToPeer(config.getBootstrapNodeHost(), config.getBootstrapNodePort()));
+            return;
+        }
+
+        int targetConnections = config.getMinConnections();
+        int missing = targetConnections - getConnectedPeerCount();
+        if (missing <= 0) return;
+
+        List<PeerInfo> candidates = new ArrayList<>(getKnownPeers());
+
+        candidates.removeIf(peer ->
+                connectedPeers.containsKey(peer.getPublicKey()) ||
+                        peer.getPublicKey().equals(encodedPublicKey));
 
         Collections.shuffle(candidates);
 
-        for (PeerInfo info : candidates) {
-            logger.info("Trying to connect to peer: {}:{}", info.host, info.port);
-            if (connectedPeers.size() > config.getMaxConnections()) break;
+        for (PeerInfo info : candidates.stream().limit(missing).toList()) {
             peerExecutor.submit(() -> connectToPeer(info.host, info.port));
         }
     }
 
+    // GPT helper understand the exponential back-off, specifically how to define timeout interval
     public void connectToPeer(String ip, int port) {
+        logger.info("Trying to connect to peer: {}:{}", ip, port);
         int attempts = config.getConnectionRetryAttempts();
-        int retries = 0;
-        while (retries++ < attempts) {
+
+        for (int retries = 1; retries <= attempts; retries++) {
             try {
                 Socket socket = new Socket();
                 socket.connect(new InetSocketAddress(ip, port), config.getConnectionTimeoutInMilliseconds());
@@ -144,13 +155,14 @@ public class NetworkManager {
                 peerExecutor.submit(new Peer(socket, queue, this, PeerDirection.OUTBOUND));
                 return;
             } catch (IOException e) {
+//                if (retries == attempts) break;
+                long timeout = (1L << (retries - 1)) * 100;
+                logger.warn(e, "Failed connecting to {}:{} (attempt {}/{}). Retrying in {}ms...", ip, port, retries, attempts, timeout);
                 try {
-                    long timeout = (1L << (retries - 1)) * 100;
-                    logger.warn("Failed connecting to {}:{} (attempt {}/{}). Retrying in {}ms...", ip, port, retries, attempts, timeout);
-                    if (retries == attempts) continue;
                     Thread.sleep(timeout);
                 } catch (InterruptedException ex) {
                     logger.error("Interrupted while waiting for outbound node.", ex);
+//                    Thread.currentThread().interrupt(); // figure out why
                     return;
                 }
             }
