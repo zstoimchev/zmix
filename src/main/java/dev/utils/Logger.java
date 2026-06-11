@@ -1,5 +1,7 @@
 package dev.utils;
 
+import lombok.extern.java.Log;
+
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,6 +18,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class Logger {
     private static final DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     public enum LogLevel {DEBUG, INFO, NOTICE, WARNING, ERROR, CRITICAL, ALERT, EMERGENCY, USER_SPACE}
+    private static LogLevel MIN_LOG_LEVEL = LogLevel.INFO;
     private final String contextName;
 
     private static final String RED = "\u001B[31m";
@@ -46,7 +49,7 @@ public class Logger {
 
     private static final PrintStream FILE_OUT;
 
-    // invoked only once, when the application starts
+    // invoked only once when the application starts
     static {
         PrintStream ps = null;
 
@@ -64,11 +67,23 @@ public class Logger {
 
             Path logFile = Paths.get(logDirectory, fileName);
             ps = new PrintStream(new FileOutputStream(logFile.toFile(), true),true);
+
+            getMinLogLevel(properties);
         } catch (IOException e) {
             System.err.println("[Logger] Could not open log file: " + e.getMessage());
         }
 
         FILE_OUT = ps;
+    }
+
+    private static void getMinLogLevel(Properties properties) {
+        try {
+            String level = properties.getProperty("logger.level.min", "DEBUG");
+            MIN_LOG_LEVEL = LogLevel.valueOf(level.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            System.err.println("[Logger] Invalid log level in configuration: " + e.getMessage() + ". Defaulting to DEBUG.");
+            MIN_LOG_LEVEL = LogLevel.DEBUG;
+        }
     }
 
     private static void log(Throwable t, String contextName, String message, LogLevel level) {
@@ -90,6 +105,7 @@ public class Logger {
         }
 
         if (!isConsoleEnabled() && isLowPriority(level)) return;
+        if (level.ordinal() < MIN_LOG_LEVEL.ordinal()) return;
         System.out.println(plain);
         if (t != null) t.printStackTrace(System.err);
     }

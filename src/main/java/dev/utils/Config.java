@@ -87,6 +87,4 @@ public class Config {
     public int getConnectionTimeoutInMilliseconds() {
         return Integer.parseInt(properties.getProperty("connection.timeout.milliseconds", "5000"));
     }
-
-    // TODO: method for verifying config values (integers specifically)
 }
