@@ -46,7 +46,7 @@ public class Logger {
 
     private static final PrintStream FILE_OUT;
 
-    // invoked only once, when the application starts
+    // invoked only once when the application starts
     static {
         PrintStream ps = null;
 
