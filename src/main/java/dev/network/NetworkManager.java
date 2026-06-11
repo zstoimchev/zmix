@@ -147,7 +147,7 @@ public class NetworkManager {
         logger.info("Trying to connect to peer: {}:{}", ip, port);
         int attempts = config.getConnectionRetryAttempts();
 
-        for (int retries = 1; retries < attempts; retries++) {
+        for (int retries = 1; retries <= attempts; retries++) {
             try {
                 Socket socket = new Socket();
                 socket.connect(new InetSocketAddress(ip, port), config.getConnectionTimeoutInMilliseconds());
