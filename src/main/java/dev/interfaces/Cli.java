@@ -46,7 +46,7 @@ public class Cli extends Thread {
             case "\\d":
                 Logger.disableConsole();
                 return;
-            case "\\c":
+            case "\\e":
                 Logger.enableConsole();
                 return;
             case "\\s":
@@ -85,11 +85,13 @@ public class Cli extends Thread {
                 ====================================================================================================
                 Welcome to the CLI help menu!
                 You can enter a URL to send a request through the network, or use one of the following commands:
-                 -> \\h (HELP)  - Show help
-                 -> \\s (STATS) - Show node statistics
-                 -> \\p (PEERS) - Show connected peers
-                 -> \\r (ROUTE) - Show active circuits and their routes
-                 -> \\q (QUIT)  - Exit application
+                 -> \\h (HELP)      - Show help
+                 -> \\d (DISABLE)   - Disable console output
+                 -> \\e (ENABLE)    - Enable console output
+                 -> \\s (STATS)     - Show node statistics
+                 -> \\p (PEERS)     - Show connected peers
+                 -> \\r (ROUTE)     - Show active circuits and their routes
+                 -> \\q (QUIT)      - Exit application
                 Note: When entering a URL, it must start with http:// or https://
                 ====================================================================================================
                 """);
