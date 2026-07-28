@@ -39,10 +39,11 @@ public class Server extends Thread {
             while (!this.isInterrupted()) {
                 Socket clientSocket = serverSocket.accept();
                 logger.info("""
+                        
                         =========== New connection: ===========
                          -> Remote IP: {}:{}
-                        =======================================
-                        """,  clientSocket.getInetAddress().getHostAddress(), clientSocket.getPort());
+                        =======================================""",
+                        clientSocket.getInetAddress().getHostAddress(), clientSocket.getPort());
                 peerExecutor.submit(new Peer(clientSocket, queue, networkManager, PeerDirection.INBOUND));
             }
         } catch (BindException e) {
