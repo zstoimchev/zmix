@@ -40,3 +40,4 @@ build/
 logs
 responses/*.html
 tmp/*
+*.old
