@@ -8,6 +8,7 @@ import java.security.*;
 import java.security.spec.*;
 import java.util.Arrays;
 
+/* kudos to GPT for helping me understand AES and EDHC */
 public class Crypto {
     private final PublicKey pub;
     private final PrivateKey pvt;
@@ -29,9 +30,7 @@ public class Crypto {
         }
     }
 
-    /**
-     * Generate a new ephemeral EC key pair for ECDH
-     */
+    /* Generate a new ephemeral EC key pair for ECDH */
     public KeyPair generateECDHKeyPair() {
         try {
             ECGenParameterSpec ecSpec = new ECGenParameterSpec("secp256r1");

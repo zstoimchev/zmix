@@ -9,9 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-/*
- * Utility class for static methods shared across all the methods
- * */
+/* Utility class for static methods shared across all the methods */
 public class Utils {
     public static String encodeBytesToString(byte[] bytes) {
         return java.util.Base64.getEncoder().encodeToString(bytes);
