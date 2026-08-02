@@ -60,17 +60,21 @@ IntelliJ run configurations for all nodes are included under `.idea/runConfigura
 
 Each node is configured via a `.properties` file passed as the first argument. Key properties:
 
-| Property | Default | Description                       |
-|---|---|-----------------------------------|
-| `node.port` | `12137` | TCP port the node listens on      |
-| `node.bootstrap` | `false` | Set to `true` for the seed node   |
-| `bootstrap.host` | `localhost` | Bootstrap node hostname           |
-| `bootstrap.port` | `12137` | Bootstrap node port                    |
-| `circuit.length` | `3` | Number of hops per circuit        |
-| `node.connections.max` | `5` | Max simultaneous peer connections |
-| `node.connections.min` | `3` | Minimum connection target         |
+| Property               | Default     | Description                       |
+|------------------------|-------------|-----------------------------------|
+| `node.port`            | `12137`     | TCP port the node listens on      |
+| `node.bootstrap`       | `false`     | Set to `true` for the seed node   |
+| `bootstrap.host`       | `localhost` | Bootstrap node hostname           |
+| `bootstrap.port`       | `12137`     | Bootstrap node port               |
+| `circuit.length`       | `3`         | Number of hops per circuit        |
+| `node.connections.max` | `5`         | Max simultaneous peer connections |
+| `node.connections.min` | `3`         | Minimum connection target         |
 
 Environment variables `NODE_PORT`, `NODE_BOOTSTRAP`, and `BOOTSTRAP_HOST` override the properties file values and are used by Docker Compose.
+
+## Project Report
+
+A more detailed description of the architecture, security design, evaluation, and limitations is available in the [project report](docs/REPORT.md).
 
 ## Contact
 
