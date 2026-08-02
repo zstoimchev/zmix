@@ -41,3 +41,4 @@ logs
 responses/*.html
 tmp/*
 *.old
+*.zip
